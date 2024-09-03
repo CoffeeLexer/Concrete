@@ -8,9 +8,33 @@
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 
+class Engine;
+class Instance;
+class Device;
+
 class Instance
 {
+    friend Engine;
+    friend Device;
+
     VkInstance instance;
+
+    static std::vector<const char*> GetRequiredExtensions()
+    {
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::vector<const char*> extensions;
+        extensions.resize(glfwExtensionCount);
+        for (uint32_t i = 0; i < glfwExtensionCount; i++)
+            extensions.push_back(glfwExtensions[i]);
+
+#if __APPLE__
+        extensions.push_back(VK_KHR_portability_enumeration);
+#endif
+        return extensions;
+    }
 public:
     Instance()
     {
@@ -23,21 +47,12 @@ public:
             .apiVersion = VK_API_VERSION_1_0,
         };
 
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<std::string> extensions;
-        extensions.resize(glfwExtensionCount);
-        for (uint32_t i = 0; i < glfwExtensionCount; i++)
-            extensions.push_back(glfwExtensions[i]);
-
 #if __APPLE__
-        extensions.push_back(VK_KHR_portability_enumeration);
         const VkInstanceCreateFlags flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #else
         const VkInstanceCreateFlags flags = 0;
 #endif
+        auto extensions = Instance::GetRequiredExtensions();
 
         VkInstanceCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -46,8 +61,8 @@ public:
             .pApplicationInfo = &info,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = 0,
-            .enabledExtensionCount = glfwExtensionCount,
-            .ppEnabledExtensionNames = glfwExtensions,
+            .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+            .ppEnabledExtensionNames = extensions.data(),
         };
 
         VkResult result = vkCreateInstance(&ci, nullptr, &instance);
@@ -62,12 +77,74 @@ public:
 
 class Device
 {
+    Instance &instance;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
-public:
-    Device()
-    {
 
+
+    VkPhysicalDevice PickPhysicalDevice()
+    {
+        uint32_t count;
+        vkEnumeratePhysicalDevices(instance.instance, &count, nullptr);
+        std::vector<VkPhysicalDevice> devices = {};
+        devices.resize(count);
+        vkEnumeratePhysicalDevices(instance.instance, &count, devices.data());
+        if (count == 1)
+            return devices.at(0);
+
+        for (const auto& device : devices)
+        {
+            VkPhysicalDeviceFeatures features;
+            vkGetPhysicalDeviceFeatures(device, &features);
+            VkPhysicalDeviceProperties properties;
+            vkGetPhysicalDeviceProperties(device, &properties);
+
+            if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+                return device;
+        }
+
+        return devices.at(0);
+    }
+
+    void PickQueueFamily()
+    {
+        uint32_t familyCount;
+        VkQueueFamilyProperties *propreties;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties);
+
+        for (uint32_t i = 0; i < familyCount; i++)
+        {
+            const auto& property = properties[i];
+
+            if (property.queueFlags | VK_QUEUE_GRAPHICS_BIT)
+                return i;
+        }
+    }
+public:
+    Device(Instance i)
+        : instance(i)
+    {
+        physicalDevice = PickPhysicalDevice();
+
+
+
+        VkDeviceCreateInfo ci = {
+            .sType = VK_STRUCTURE_TYPE_DE
+            .pNext = nullptr,
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos = 
+            .enabledExtensionCount = 0,
+            .ppEnabledExtensionNames = nullptr,
+            .enabledLayerCount = 0,
+            .ppEnabledLayerNames = nullptr,
+            .pEnabledFeatures = nullptr,
+        };
+
+        Vkresult result = vkCreateDevice(physicalDevice, &ci, nullptr, &device);
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed device create");
+        }
     }
 
     ~Device()
@@ -75,6 +152,8 @@ public:
 
     }
 };
+
+
 
 class Window
 {
