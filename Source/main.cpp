@@ -1,8 +1,11 @@
-#include <cstdio>
+#include <bit>
 #include <cstdint>
+#include <cstdio>
 #include <stdexcept>
-#include <vector>
 #include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "vulkan/vulkan.h"
 
 #define GLFW_INCLUDE_NONE
@@ -28,7 +31,7 @@ class Instance
         std::vector<const char*> extensions;
         extensions.resize(glfwExtensionCount);
         for (uint32_t i = 0; i < glfwExtensionCount; i++)
-            extensions.push_back(glfwExtensions[i]);
+            extensions[i] = glfwExtensions[i];
 
 #if __APPLE__
         extensions.push_back(VK_KHR_portability_enumeration);
@@ -75,6 +78,65 @@ public:
     }
 };
 
+class QueueCreateManager
+{
+    std::unordered_map<VkQueueFlagBits, uint32_t> requests;
+
+    inline void Add(VkQueueFlagBits bit)
+    {
+        auto item = requests.find(bit);
+        if (item == requests.end())
+            requests[bit] = 0;
+        requests[bit] += 1;
+    }
+public:
+    QueueCreateManager() = default;
+
+    void Request(VkQueueFlagBits flag)
+    {
+        switch (flag)
+        {
+        case VK_QUEUE_GRAPHICS_BIT:
+        case VK_QUEUE_COMPUTE_BIT:
+        case VK_QUEUE_TRANSFER_BIT:
+            Add(flag);
+            return;
+        default:
+            fprintf(stderr, "Unrecognized queue type\n");
+        }
+
+        return;
+    }
+
+    void Submit(VkPhysicalDevice phyDevice)
+    {
+        uint32_t familyCount;
+        VkQueueFamilyProperties *properties;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties);
+
+        
+        // VkDeviceQueueCreateInfo ci = {
+        //     .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        //     .pNext = nullptr,
+        //     .flags = 0,
+        //     .queueFamilyIndex = ,
+        //     .queueCount = ,
+        //     .pQueuePriorities = ,
+        // };
+    }
+};
+
+class Queue
+{
+    friend QueueCreateManager;
+
+    VkQueue queue;
+
+
+    Queue() = delete;
+public:
+};
+
 class Device
 {
     Instance &instance;
@@ -106,10 +168,10 @@ class Device
         return devices.at(0);
     }
 
-    void PickQueueFamily()
+    uint32_t PickQueueFamily()
     {
         uint32_t familyCount;
-        VkQueueFamilyProperties *propreties;
+        VkQueueFamilyProperties *properties;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties);
 
         for (uint32_t i = 0; i < familyCount; i++)
@@ -126,21 +188,20 @@ public:
     {
         physicalDevice = PickPhysicalDevice();
 
-
-
         VkDeviceCreateInfo ci = {
-            .sType = VK_STRUCTURE_TYPE_DE
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .pNext = nullptr,
-            .queueCreateInfoCount = 1,
-            .pQueueCreateInfos = 
-            .enabledExtensionCount = 0,
-            .ppEnabledExtensionNames = nullptr,
+            .flags = 0,
+            .queueCreateInfoCount = 0,
+            .pQueueCreateInfos = nullptr,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
+            .enabledExtensionCount = 0,
+            .ppEnabledExtensionNames = nullptr,
             .pEnabledFeatures = nullptr,
         };
 
-        Vkresult result = vkCreateDevice(physicalDevice, &ci, nullptr, &device);
+        VkResult result = vkCreateDevice(physicalDevice, &ci, nullptr, &device);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("Failed device create");
@@ -247,6 +308,10 @@ public:
 int main()
 {
     Window window = Window();
+
+    Engine engine = Engine();
+    Instance instance = Instance();
+    Device device = Device(instance);
 
     while (window.IsValid())
     {
