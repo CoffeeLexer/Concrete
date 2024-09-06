@@ -1,4 +1,3 @@
-#include <bit>
 #include <cstdint>
 #include <cstdio>
 #include <stdexcept>
@@ -21,6 +20,7 @@ class Instance
     friend Device;
 
     VkInstance instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
 
     static std::vector<const char*> GetRequiredExtensions()
     {
@@ -38,6 +38,17 @@ class Instance
 #endif
         return extensions;
     }
+
+    static VkBool32 VKAPI_PTR debugLogCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData)
+    {
+        fprintf(stderr, "VVL ERROR: %s\n", pCallbackData->pMessage);
+        return VK_FALSE;
+    }
+
 public:
     Instance()
     {
@@ -57,6 +68,10 @@ public:
 #endif
         auto extensions = Instance::GetRequiredExtensions();
 
+#if !NDEBUG
+        extensions.push_back("VK_EXT_debug_utils");
+#endif
+
         VkInstanceCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pNext = nullptr,
@@ -71,9 +86,27 @@ public:
         VkResult result = vkCreateInstance(&ci, nullptr, &instance);
         if (result != VK_SUCCESS)
             throw std::runtime_error("FAILED INSTANCE");
+
+        VkDebugUtilsMessengerCreateInfoEXT callback = {
+            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            .pNext = nullptr,
+            .flags = 0,
+            .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
+            .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
+            .pfnUserCallback = debugLogCallback,
+            .pUserData = nullptr,
+        };
+
+#if !NDEBUG
+        auto pfnCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        pfnCreateDebugUtilsMessengerEXT(instance, &callback, nullptr, &debugMessenger);
+#endif
+
     }
     ~Instance()
     {
+        auto pfnDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        pfnDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroyInstance(instance, nullptr);
     }
 };
@@ -112,7 +145,7 @@ public:
     {
         uint32_t familyCount;
         VkQueueFamilyProperties *properties;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties);
+        vkGetPhysicalDeviceQueueFamilyProperties(phyDevice, &familyCount, properties);
 
         
         // VkDeviceQueueCreateInfo ci = {
@@ -139,7 +172,7 @@ public:
 
 class Device
 {
-    Instance &instance;
+    Instance instance;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
 
@@ -210,7 +243,7 @@ public:
 
     ~Device()
     {
-
+        vkDestroyDevice(device, nullptr);
     }
 };
 
