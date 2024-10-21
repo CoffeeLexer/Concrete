@@ -10,9 +10,13 @@
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 
+#define FATAL(statement) if(!(statement)) {printf("FATAL ERROR %s:%i (%s)\n", __PRETTY_FUNCTION__, __LINE__, #statement); exit(1);}
+
 class Engine;
 class Instance;
 class Device;
+class CommandPool;
+class CommandBuffer;
 
 class Instance
 {
@@ -111,71 +115,16 @@ public:
     }
 };
 
-class QueueCreateManager
-{
-    std::unordered_map<VkQueueFlagBits, uint32_t> requests;
-
-    inline void Add(VkQueueFlagBits bit)
-    {
-        auto item = requests.find(bit);
-        if (item == requests.end())
-            requests[bit] = 0;
-        requests[bit] += 1;
-    }
-public:
-    QueueCreateManager() = default;
-
-    void Request(VkQueueFlagBits flag)
-    {
-        switch (flag)
-        {
-        case VK_QUEUE_GRAPHICS_BIT:
-        case VK_QUEUE_COMPUTE_BIT:
-        case VK_QUEUE_TRANSFER_BIT:
-            Add(flag);
-            return;
-        default:
-            fprintf(stderr, "Unrecognized queue type\n");
-        }
-
-        return;
-    }
-
-    void Submit(VkPhysicalDevice phyDevice)
-    {
-        uint32_t familyCount;
-        VkQueueFamilyProperties *properties;
-        vkGetPhysicalDeviceQueueFamilyProperties(phyDevice, &familyCount, properties);
-
-        
-        // VkDeviceQueueCreateInfo ci = {
-        //     .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        //     .pNext = nullptr,
-        //     .flags = 0,
-        //     .queueFamilyIndex = ,
-        //     .queueCount = ,
-        //     .pQueuePriorities = ,
-        // };
-    }
-};
-
-class Queue
-{
-    friend QueueCreateManager;
-
-    VkQueue queue;
-
-
-    Queue() = delete;
-public:
-};
-
 class Device
 {
-    Instance instance;
+    friend CommandPool;
+    friend CommandBuffer;
+
+    const Instance &instance;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
-
+    uint32_t familyIndex;
+    VkQueue queue;
 
     VkPhysicalDevice PickPhysicalDevice()
     {
@@ -214,19 +163,32 @@ class Device
             if (property.queueFlags | VK_QUEUE_GRAPHICS_BIT)
                 return i;
         }
+        throw std::runtime_error("No queue family");
     }
 public:
-    Device(Instance i)
+    // TODO: Queue Factory or mngr
+    Device(const Instance& i)
         : instance(i)
     {
         physicalDevice = PickPhysicalDevice();
+
+        float priority = 1;
+        familyIndex = PickQueueFamily();
+        VkDeviceQueueCreateInfo queueCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .queueFamilyIndex = familyIndex,
+            .queueCount = 1,
+            .pQueuePriorities = &priority,
+        };
 
         VkDeviceCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueCreateInfoCount = 0,
-            .pQueueCreateInfos = nullptr,
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos = &queueCreateInfo,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = 0,
@@ -239,6 +201,7 @@ public:
         {
             throw std::runtime_error("Failed device create");
         }
+        vkGetDeviceQueue(device, familyIndex, 0, &queue);
     }
 
     ~Device()
@@ -247,7 +210,59 @@ public:
     }
 };
 
+class CommandPool
+{
+    friend CommandBuffer;
 
+    VkCommandPool pool;
+    const Device &device;
+public:
+    CommandPool(const Device &device)
+        : device(device)
+    {
+        VkCommandPoolCreateInfo ci = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .queueFamilyIndex = device.familyIndex,
+        };
+
+        VkResult result = vkCreateCommandPool(device.device, &ci, nullptr, &pool);
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Command Pool init failed");
+        }
+    }
+
+    ~CommandPool()
+    {
+        vkDestroyCommandPool(device.device, pool, nullptr);
+    }
+};
+
+class CommandBuffer
+{
+    const CommandPool &pool;
+    VkCommandBuffer buffer;
+public:
+    CommandBuffer(const CommandPool &pool)
+        : pool(pool)
+    {
+        VkCommandBufferAllocateInfo ai = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .commandPool = pool.pool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1,
+        };
+
+        VkResult result = vkAllocateCommandBuffers(pool.device.device, &ai, &buffer);
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed allocate cmd buffer");
+        }
+    }
+};
 
 class Window
 {
@@ -345,6 +360,8 @@ int main()
     Engine engine = Engine();
     Instance instance = Instance();
     Device device = Device(instance);
+    CommandPool pool = CommandPool(device);
+    CommandBuffer buffer = CommandBuffer(pool);
 
     while (window.IsValid())
     {
