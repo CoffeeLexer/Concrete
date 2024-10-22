@@ -31,6 +31,7 @@ class Instance
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        // Win: "VK_KHR_surface", "VK_KHR_win32_surface"
 
         std::vector<const char*> extensions;
         extensions.resize(glfwExtensionCount);
@@ -165,6 +166,13 @@ class Device
         }
         throw std::runtime_error("No queue family");
     }
+
+    std::vector<const char*> GetExtensions()
+    {
+        return (std::vector<const char*>) {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        };
+    }
 public:
     // TODO: Queue Factory or mngr
     Device(const Instance& i)
@@ -183,6 +191,7 @@ public:
             .pQueuePriorities = &priority,
         };
 
+        auto extensions = GetExtensions();
         VkDeviceCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .pNext = nullptr,
@@ -191,8 +200,8 @@ public:
             .pQueueCreateInfos = &queueCreateInfo,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
-            .enabledExtensionCount = 0,
-            .ppEnabledExtensionNames = nullptr,
+            .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+            .ppEnabledExtensionNames = extensions.data(),
             .pEnabledFeatures = nullptr,
         };
 
