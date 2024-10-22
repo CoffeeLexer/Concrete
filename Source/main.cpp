@@ -154,8 +154,10 @@ class Device
     uint32_t PickQueueFamily()
     {
         uint32_t familyCount;
-        VkQueueFamilyProperties *properties;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> properties;
+        properties.resize(familyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties.data());
 
         for (uint32_t i = 0; i < familyCount; i++)
         {
