@@ -55,6 +55,11 @@ class Instance
     }
 
 public:
+    operator const VkInstance&() const
+    {
+        return instance;
+    }
+
     Instance()
     {
         VkApplicationInfo info = {
@@ -130,10 +135,10 @@ class Device
     VkPhysicalDevice PickPhysicalDevice()
     {
         uint32_t count;
-        vkEnumeratePhysicalDevices(instance.instance, &count, nullptr);
+        vkEnumeratePhysicalDevices(instance, &count, nullptr);
         std::vector<VkPhysicalDevice> devices = {};
         devices.resize(count);
-        vkEnumeratePhysicalDevices(instance.instance, &count, devices.data());
+        vkEnumeratePhysicalDevices(instance, &count, devices.data());
         if (count == 1)
             return devices.at(0);
 
@@ -176,6 +181,12 @@ class Device
         };
     }
 public:
+    operator const VkDevice&() const
+    {
+        return device;
+    }
+
+
     // TODO: Queue Factory or mngr
     Device(const Instance& i)
         : instance(i)
@@ -238,7 +249,7 @@ public:
             .queueFamilyIndex = device.familyIndex,
         };
 
-        VkResult result = vkCreateCommandPool(device.device, &ci, nullptr, &pool);
+        VkResult result = vkCreateCommandPool(device, &ci, nullptr, &pool);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("Command Pool init failed");
@@ -247,7 +258,7 @@ public:
 
     ~CommandPool()
     {
-        vkDestroyCommandPool(device.device, pool, nullptr);
+        vkDestroyCommandPool(device, pool, nullptr);
     }
 };
 
@@ -267,7 +278,7 @@ public:
             .commandBufferCount = 1,
         };
 
-        VkResult result = vkAllocateCommandBuffers(pool.device.device, &ai, &buffer);
+        VkResult result = vkAllocateCommandBuffers(pool.device, &ai, &buffer);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("Failed allocate cmd buffer");
