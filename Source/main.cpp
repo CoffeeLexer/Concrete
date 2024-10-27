@@ -156,6 +156,21 @@ class Device
         return devices.at(0);
     }
 
+    VkBool32* PickPresentFamily(VkSurfaceKHR surface)
+    {
+        uint32_t familyCount;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+        VkBool32 *supportArray = (VkBool32*)malloc(familyCount * sizeof(VkBool32));
+
+        for (uint32_t i = 0; i < familyCount; i++)
+        {
+            VkBool32 supported;
+            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supported);
+            supportArray[i] = supported;
+        }
+        return supportArray;
+    }
+
     uint32_t PickQueueFamily()
     {
         uint32_t familyCount;
@@ -168,7 +183,7 @@ class Device
         {
             const auto& property = properties[i];
 
-            if (property.queueFlags | VK_QUEUE_GRAPHICS_BIT)
+            if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 return i;
         }
         throw std::runtime_error("No queue family");
@@ -366,6 +381,32 @@ public:
     {
         return !glfwWindowShouldClose(window);
     }
+
+    VkSurfaceKHR CreateSurface(const VkInstance& instance)
+    {
+        VkSurfaceKHR surface;
+        VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Couldn't create surface");
+        }
+        return surface;
+    }
+};
+
+class Surface
+{
+    const VkInstance &instance;
+    const VkSurfaceKHR &surface;
+public:
+    Surface(const VkInstance &instance, const VkSurfaceKHR &surface)
+        : instance(instance)
+        , surface(surface) {}
+
+    ~Surface()
+    {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+    }
 };
 
 class Engine
@@ -384,6 +425,7 @@ int main()
     Device device = Device(instance);
     CommandPool pool = CommandPool(device);
     CommandBuffer buffer = CommandBuffer(pool);
+    Surface surface = Surface(instance, window.CreateSurface(instance));
 
     while (window.IsValid())
     {
