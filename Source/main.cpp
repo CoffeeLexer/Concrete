@@ -156,11 +156,12 @@ class Device
         return devices.at(0);
     }
 
-    VkBool32* PickPresentFamily(VkSurfaceKHR surface)
+    std::vector<VkBool32> GetPresentSupportVector(VkSurfaceKHR surface)
     {
         uint32_t familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
-        VkBool32 *supportArray = (VkBool32*)malloc(familyCount * sizeof(VkBool32));
+        std::vector<VkBool32> supportArray;
+        supportArray.resize(familyCount);
 
         for (uint32_t i = 0; i < familyCount; i++)
         {
@@ -171,22 +172,60 @@ class Device
         return supportArray;
     }
 
-    uint32_t PickQueueFamily()
+    std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties()
     {
         uint32_t familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
         std::vector<VkQueueFamilyProperties> properties;
         properties.resize(familyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties.data());
+        return properties;
+    }
 
-        for (uint32_t i = 0; i < familyCount; i++)
+    std::tuple<uint32_t, uint32_t> PickQueueFamily(VkSurfaceKHR surface)
+    {
+        auto presentSupport = GetPresentSupportVector(surface);
+        auto queueFamilyProperties = GetQueueFamilyProperties();
+
+        for (uint32_t i = 0; i < presentSupport.size(); i++)
+        {
+            if (presentSupport[i] == VK_TRUE)
+            {
+                const auto& property = queueFamilyProperties.at(i);
+                if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                    return {i, i};
+            }
+        }
+
+        uint32_t graphicsQueue = UINT32_MAX;
+        for (uint32_t i = 0; i < queueFamilyProperties.size(); i++)
         {
             const auto& property = properties[i];
 
             if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                return i;
+            {
+                graphicsQueue = i;
+                break;
+            }
         }
-        throw std::runtime_error("No queue family");
+
+        if (graphicsQueue == UINT32_MAX)
+            throw std::runtime_error("No queue graphics family");
+
+        uint32_t presentQueue = UINT32_MAX;
+        for (uint32_t i = 0; i < familyCount; i++)
+        {
+            if (presentSupport.at(i) == VK_TRUE)
+            {
+                presentQueue = i;
+                break;
+            }
+        }
+
+        if (presentQueue == UINT32_MAX)
+            throw std::runtime_error("No queue present family");
+
+        return {presentQueue, graphicsQueue};
     }
 
     std::vector<const char*> GetExtensions()
@@ -209,7 +248,9 @@ public:
         physicalDevice = PickPhysicalDevice();
 
         float priority = 1;
-        familyIndex = PickQueueFamily();
+        const auto = PickQueueFamily(surface);
+
+
         VkDeviceQueueCreateInfo queueCreateInfo = {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
