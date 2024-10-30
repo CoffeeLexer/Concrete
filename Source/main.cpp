@@ -14,9 +14,29 @@
 
 class Engine;
 class Instance;
+class Surface;
 class Device;
 class CommandPool;
 class CommandBuffer;
+
+class Surface
+{
+    const VkInstance &instance;
+    const VkSurfaceKHR &surface;
+public:
+    operator const VkSurfaceKHR&() const
+    {
+        return surface;
+    }
+    Surface(const VkInstance &instance, const VkSurfaceKHR &surface)
+        : instance(instance)
+        , surface(surface) {}
+
+    ~Surface()
+    {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+    }
+};
 
 class Instance
 {
@@ -127,10 +147,11 @@ class Device
     friend CommandBuffer;
 
     const Instance &instance;
+    const Surface &surface;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
-    uint32_t familyIndex;
-    VkQueue queue;
+    VkQueue graphicsQueue;
+    VkQueue presentQueue;
 
     VkPhysicalDevice PickPhysicalDevice()
     {
@@ -156,7 +177,7 @@ class Device
         return devices.at(0);
     }
 
-    std::vector<VkBool32> GetPresentSupportVector(VkSurfaceKHR surface)
+    std::vector<VkBool32> GetPresentSupportVector()
     {
         uint32_t familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
@@ -182,9 +203,9 @@ class Device
         return properties;
     }
 
-    std::tuple<uint32_t, uint32_t> PickQueueFamily(VkSurfaceKHR surface)
+    std::tuple<uint32_t, uint32_t> PickQueueFamily()
     {
-        auto presentSupport = GetPresentSupportVector(surface);
+        auto presentSupport = GetPresentSupportVector();
         auto queueFamilyProperties = GetQueueFamilyProperties();
 
         for (uint32_t i = 0; i < presentSupport.size(); i++)
@@ -200,7 +221,7 @@ class Device
         uint32_t graphicsQueue = UINT32_MAX;
         for (uint32_t i = 0; i < queueFamilyProperties.size(); i++)
         {
-            const auto& property = properties[i];
+            const auto& property = queueFamilyProperties.at(i);
 
             if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
@@ -213,7 +234,7 @@ class Device
             throw std::runtime_error("No queue graphics family");
 
         uint32_t presentQueue = UINT32_MAX;
-        for (uint32_t i = 0; i < familyCount; i++)
+        for (uint32_t i = 0; i < presentSupport.size(); i++)
         {
             if (presentSupport.at(i) == VK_TRUE)
             {
@@ -242,31 +263,57 @@ public:
 
 
     // TODO: Queue Factory or mngr
-    Device(const Instance& i)
+    Device(const Instance& i, const Surface& s)
         : instance(i)
+        , surface(s)
     {
         physicalDevice = PickPhysicalDevice();
 
-        float priority = 1;
-        const auto = PickQueueFamily(surface);
+        float priorities[] = {1.0f, 1.0f};
+        const auto & [presentFamily, graphicsFamily] = PickQueueFamily();
 
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = {};
 
-        VkDeviceQueueCreateInfo queueCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .queueFamilyIndex = familyIndex,
-            .queueCount = 1,
-            .pQueuePriorities = &priority,
-        };
+        if (presentFamily == graphicsFamily)
+        {
+            VkDeviceQueueCreateInfo queueCreateInfo = {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .queueFamilyIndex = presentFamily,
+                .queueCount = 2,
+                .pQueuePriorities = priorities,
+            };
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
+        else
+        {
+            VkDeviceQueueCreateInfo graphicsQueueInfo = {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .queueFamilyIndex = graphicsFamily,
+                .queueCount = 1,
+                .pQueuePriorities = priorities,
+            };
+            VkDeviceQueueCreateInfo presentQueueInfo = {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .queueFamilyIndex = presentFamily,
+                .queueCount = 1,
+                .pQueuePriorities = priorities,
+            };
+            queueCreateInfos.push_back(presentQueueInfo);
+        }
 
         auto extensions = GetExtensions();
         VkDeviceCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueCreateInfoCount = 1,
-            .pQueueCreateInfos = &queueCreateInfo,
+            .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+            .pQueueCreateInfos = queueCreateInfos.data(),
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
@@ -279,7 +326,8 @@ public:
         {
             throw std::runtime_error("Failed device create");
         }
-        vkGetDeviceQueue(device, familyIndex, 0, &queue);
+        vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
+        vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
     }
 
     ~Device()
@@ -435,21 +483,6 @@ public:
     }
 };
 
-class Surface
-{
-    const VkInstance &instance;
-    const VkSurfaceKHR &surface;
-public:
-    Surface(const VkInstance &instance, const VkSurfaceKHR &surface)
-        : instance(instance)
-        , surface(surface) {}
-
-    ~Surface()
-    {
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-    }
-};
-
 class Engine
 {
 
@@ -463,10 +496,10 @@ int main()
 
     Engine engine = Engine();
     Instance instance = Instance();
-    Device device = Device(instance);
+    Surface surface = Surface(instance, window.CreateSurface(instance));
+    Device device = Device(instance, surface);
     CommandPool pool = CommandPool(device);
     CommandBuffer buffer = CommandBuffer(pool);
-    Surface surface = Surface(instance, window.CreateSurface(instance));
 
     while (window.IsValid())
     {
