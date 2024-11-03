@@ -152,6 +152,8 @@ class Device
     VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    uint32_t graphicsIndex;
+    uint32_t presentIndex;
 
     VkPhysicalDevice PickPhysicalDevice()
     {
@@ -271,6 +273,8 @@ public:
 
         float priorities[] = {1.0f, 1.0f};
         const auto & [presentFamily, graphicsFamily] = PickQueueFamily();
+        graphicsIndex = graphicsFamily;
+        presentIndex = presentFamily;
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = {};
 
@@ -330,6 +334,32 @@ public:
         vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
     }
 
+    VkPresentModeKHR GetBestPresentMode()
+    {
+        uint32_t count;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
+        std::vector<VkPresentModeKHR> modes = {};
+        modes.resize(count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, modes.data());
+
+        VkPresentModeKHR priorities[] = {
+            VK_PRESENT_MODE_FIFO_KHR,
+            VK_PRESENT_MODE_MAILBOX_KHR,
+            VK_PRESENT_MODE_FIFO_RELAXED_KHR,
+            VK_PRESENT_MODE_IMMEDIATE_KHR,
+        };
+
+        for (const auto& p : priorities)
+        {
+            for (uint32_t i = 0; i < count; i++)
+            {
+                if (p == modes.at(i))
+                    return p;
+            }
+        }
+        return modes.at(0);
+    }
+
     ~Device()
     {
         vkDestroyDevice(device, nullptr);
@@ -350,7 +380,7 @@ public:
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = device.familyIndex,
+            .queueFamilyIndex = device.graphicsIndex,
         };
 
         VkResult result = vkCreateCommandPool(device, &ci, nullptr, &pool);
@@ -387,6 +417,35 @@ public:
         {
             throw std::runtime_error("Failed allocate cmd buffer");
         }
+    }
+};
+
+class Swapchain
+{
+    VkSwapchainKHR swapchain;
+public:
+    Swapchain()
+    {
+        // VkSwapchainCreateInfoKHR ci = {
+        //     .sType = VK_STRUCTURE_TYPE_SWAPCHAIN,
+        //     .pNext = nullptr,
+        //     .flags = 0,
+        //     .surface = ,
+        //     .minImageCount = 2,
+        //     .imageFormat = R8G8B8A8_UNORM,
+        //     .imageColorSpace = SRGB_NONLINEAR_KHR,
+        //     .imageExtent = ,
+        //     .imageArrayLayers = ,
+        //     .imageUsage = ,
+        //     .imageSharingMode = ,
+        //     .queueFamilyIndexCount = ,
+        //     .pQueueFamilyIndices = ,
+        //     .preTransform = ,
+        //     .compositeAlpha = ,
+        //     .presentMode = device.GetBestPresentMode(),
+        //     .clipped = VK_TRUE;
+        //     .oldSwapchain = nullptr;
+        // };
     }
 };
 
