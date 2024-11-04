@@ -1,6 +1,12 @@
 set(APP_NAME ConcreteApp)
 
-# set(SOURCES)
+set(SOURCES
+    Device.cpp
+    Engine.cpp
+    Instance.cpp
+    PhysicalDevice.cpp
+    Surface.cpp
+    Window.cpp)
 
 add_executable(${APP_NAME}
     ${SOURCES}
