@@ -1,12 +1,17 @@
 #include "Surface.h"
 
-Surface::Surface(const Engine &instance, const VkSurfaceKHR &surface)
+Surface::Surface(Engine &engine)
     : engine(engine)
-    , surface(surface) 
 {
 }
 
 Surface::~Surface()
 {
+    VkInstance &instance = engine;
     vkDestroySurfaceKHR(instance, surface, nullptr);
+}
+
+Surface::operator VkSurfaceKHR&()
+{
+    return surface;
 }

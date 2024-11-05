@@ -1,19 +1,23 @@
 #pragma once
 
+#include "vulkan/vulkan.h"
+
 class Engine;
 class GLFWwindow;
 
 class Window
 {
-    const Engine &engine;
+    Engine &engine;
     GLFWwindow *window;
 
 public:
 
-    Window(const Engine &engine);
+    Window(Engine &engine);
     ~Window();
 
     void SwapBuffers();
     void PollEvents();
     bool IsValid();
+
+    VkSurfaceKHR CreateSurface();
 };

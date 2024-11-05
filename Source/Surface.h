@@ -1,14 +1,15 @@
 #pragma once
 
+#include "vulkan/vulkan.h"
+
+class Engine;
+
 class Surface
 {
-    const Engine &engine;
-    const VkSurfaceKHR &surface;
+    Engine &engine;
+    VkSurfaceKHR surface;
 public:
-    operator const VkSurfaceKHR&() const
-    {
-        return surface;
-    }
-    Surface(const Engine &engine);
+    operator VkSurfaceKHR&();
+    Surface(Engine &engine);
     ~Surface();
 };

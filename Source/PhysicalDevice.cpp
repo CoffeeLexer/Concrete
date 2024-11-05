@@ -1,6 +1,8 @@
 #include "PhysicalDevice.h"
 
-PhysicalDevice::PhysicalDevice(const Engine& engine)
+#include <vector>
+
+PhysicalDevice::PhysicalDevice(Engine& engine)
     : engine(engine)
     , physicalDevice(pickPhysicalDevice())
 {
@@ -30,4 +32,9 @@ VkPhysicalDevice PhysicalDevice::pickPhysicalDevice()
     }
 
     return devices.at(0);
+}
+
+PhysicalDevice::operator VkPhysicalDevice&()
+{
+    return physicalDevice;
 }

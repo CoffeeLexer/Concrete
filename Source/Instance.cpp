@@ -35,7 +35,7 @@ namespace {
     }
 }
 
-Instance::Instance(const Engine &engine)
+Instance::Instance(Engine &engine)
     : engine(engine)
 {
     VkApplicationInfo info = {
@@ -95,4 +95,9 @@ Instance::~Instance()
     auto pfnDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     pfnDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     vkDestroyInstance(instance, nullptr);
+}
+
+Instance::operator VkInstance&()
+{
+    return instance;
 }

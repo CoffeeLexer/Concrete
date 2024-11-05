@@ -1,16 +1,16 @@
 #pragma once
 
+#include "Engine.h"
+
 class PhysicalDevice
 {
-    const Engine& engine;
-    const VkPhysicalDevice& physicalDevice;
+    Engine& engine;
+    VkPhysicalDevice physicalDevice;
 
     VkPhysicalDevice pickPhysicalDevice();
 public:
-    operator const VkPhysicalDevice&() const
-    {
-        return physicalDevice;
-    }
-    PhysicalDevice(const Engine& engine);
+    operator VkPhysicalDevice&();
+
+    PhysicalDevice(Engine& engine);
     ~PhysicalDevice();
 };

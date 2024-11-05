@@ -1,5 +1,9 @@
 #include "Window.h"
 
+#include <cstdio>
+#include <cstdlib>
+#include <stdexcept>
+
 #include "GLFW/glfw3.h"
 
 namespace {
@@ -40,9 +44,10 @@ namespace {
     }
 }
 
-Window::Window()
+Window::Window(Engine &engine)
+    : engine(engine)
 {
-    Window::GlobalInit();
+    GlobalInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -63,7 +68,7 @@ Window::Window()
 Window::~Window()
 {
     glfwDestroyWindow(window);
-    Window::GlobalTerminate();
+    GlobalTerminate();
 }
 
 void Window::SwapBuffers()
@@ -84,6 +89,7 @@ bool Window::IsValid()
 
 VkSurfaceKHR Window::CreateSurface()
 {
+    const VkInstance &instance = engine;
     VkSurfaceKHR surface;
     VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
     if (result != VK_SUCCESS)

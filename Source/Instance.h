@@ -5,15 +5,12 @@ class Engine;
 
 class Instance
 {
-    const Engine &engine;
+    Engine &engine;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
 public:
-    operator const VkInstance&() const
-    {
-        return instance;
-    }
+    operator VkInstance&();
 
-    Instance(const Engine &engine);
+    Instance(Engine &engine);
     ~Instance();
 };
