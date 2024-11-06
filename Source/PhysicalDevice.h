@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Engine.h"
+#include "vulkan/vulkan.h"
+
+class Engine;
 
 class PhysicalDevice
 {

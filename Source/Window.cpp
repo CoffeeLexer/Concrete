@@ -6,6 +6,9 @@
 
 #include "GLFW/glfw3.h"
 
+#include "Instance.h"
+#include "Engine.h"
+
 namespace {
     uint32_t globalInstanceCount = 0;
 
@@ -89,7 +92,7 @@ bool Window::IsValid()
 
 VkSurfaceKHR Window::CreateSurface()
 {
-    const VkInstance &instance = engine;
+    VkInstance &instance = engine;
     VkSurfaceKHR surface;
     VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
     if (result != VK_SUCCESS)

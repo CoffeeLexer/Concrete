@@ -2,11 +2,18 @@
 
 #include <vector>
 
+#include "Engine.h"
+
 PhysicalDevice::PhysicalDevice(Engine& engine)
     : engine(engine)
     , physicalDevice(pickPhysicalDevice())
 {
 
+}
+
+PhysicalDevice::~PhysicalDevice()
+{
+    
 }
 
 VkPhysicalDevice PhysicalDevice::pickPhysicalDevice()

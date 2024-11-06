@@ -1,10 +1,5 @@
 #include "Engine.h"
 
-#include "Instance.h"
-#include "PhysicalDevice.h"
-#include "Device.h"
-#include "Surface.h"
-
 Engine::Engine()
     : instance(Instance(*this))
     , physicalDevice(PhysicalDevice(*this))
@@ -13,6 +8,10 @@ Engine::Engine()
     , device(Device(*this))
 {
 
+}
+
+Engine::~Engine()
+{
 }
 
 void Engine::run()

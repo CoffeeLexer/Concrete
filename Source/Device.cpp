@@ -1,11 +1,38 @@
 #include "Device.h"
 
 #include "Engine.h"
-#include "PhysicalDevice.h"
-#include "Surface.h"
 
 #include <vector>
 #include <stdexcept>
+
+std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
+{
+    uint32_t familyCount;
+    VkPhysicalDevice &physicalDevice = engine;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> properties;
+    properties.resize(familyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties.data());
+    return properties;
+}
+
+std::vector<VkBool32> Device::GetPresentSupportVector()
+{
+    uint32_t familyCount;
+    VkPhysicalDevice &physicalDevice = engine;
+    VkSurfaceKHR &surface = engine;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+    std::vector<VkBool32> supportArray;
+    supportArray.resize(familyCount);
+
+    for (uint32_t i = 0; i < familyCount; i++)
+    {
+        VkBool32 supported;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supported);
+        supportArray[i] = supported;
+    }
+    return supportArray;
+}
 
 Device::Device(Engine &engine)
     : engine(engine)
@@ -116,7 +143,7 @@ std::vector<const char*> Device::GetExtensions()
     };
 }
 
-    std::tuple<uint32_t, uint32_t> PickQueueFamily()
+std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
 {
     auto presentSupport = GetPresentSupportVector();
     auto queueFamilyProperties = GetQueueFamilyProperties();
@@ -160,31 +187,4 @@ std::vector<const char*> Device::GetExtensions()
         throw std::runtime_error("No queue present family");
 
     return {presentQueue, graphicsQueue};
-}
-
-    std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
-{
-    uint32_t familyCount;
-    VkPhysicalDevice physicalDevice = engine;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> properties;
-    properties.resize(familyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties.data());
-    return properties;
-}
-
-std::vector<VkBool32> Device::GetPresentSupportVector()
-{
-    uint32_t familyCount;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
-    std::vector<VkBool32> supportArray;
-    supportArray.resize(familyCount);
-
-    for (uint32_t i = 0; i < familyCount; i++)
-    {
-        VkBool32 supported;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supported);
-        supportArray[i] = supported;
-    }
-    return supportArray;
 }

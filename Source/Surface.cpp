@@ -1,5 +1,8 @@
 #include "Surface.h"
 
+#include "Instance.h"
+#include "Engine.h"
+
 Surface::Surface(Engine &engine)
     : engine(engine)
 {

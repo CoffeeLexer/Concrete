@@ -16,22 +16,16 @@ namespace {
         return VK_FALSE;
     }
 
-    std::vector<const char*> GetRequiredExtensions()
+    constexpr std::vector<const char*> GetRequiredExtensions()
     {
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        // Win: "VK_KHR_surface", "VK_KHR_win32_surface"
-
-        std::vector<const char*> extensions;
-        extensions.resize(glfwExtensionCount);
-        for (uint32_t i = 0; i < glfwExtensionCount; i++)
-            extensions[i] = glfwExtensions[i];
-
+        return {
+            "VK_KHR_surface",
 #if __APPLE__
-        extensions.push_back(VK_KHR_portability_enumeration);
+            "VK_KHR_portability_enumeration",
+#elif _WIN32
+            "VK_KHR_win32_surface",
 #endif
-        return extensions;
+        };
     }
 }
 
