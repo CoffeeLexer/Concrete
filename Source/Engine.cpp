@@ -35,6 +35,10 @@ Engine::operator VkDevice&()
 {
     return device;
 }
+Engine::operator Window&()
+{
+    return window;
+}
 Engine::operator VkSurfaceKHR&()
 {
     return surface;

@@ -6,6 +6,8 @@
 Surface::Surface(Engine &engine)
     : engine(engine)
 {
+    Window &window = engine;
+    surface = window.CreateSurface();
 }
 
 Surface::~Surface()
