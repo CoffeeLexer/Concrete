@@ -21,13 +21,13 @@ class Device
     std::tuple<uint32_t, uint32_t> PickQueueFamily();
     std::vector<const char*> GetExtensions();
 public:
-    operator VkDevice&()
-    {
-        return device;
-    }
+    operator VkDevice&();
 
     Device(Engine &engine);
     ~Device();
+
+    uint32_t GetGraphicsIndex();
+    uint32_t GetPresentIndex();
 
     VkPresentModeKHR GetBestPresentMode();
 };

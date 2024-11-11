@@ -7,6 +7,7 @@
 #include "Device.h"
 #include "Surface.h"
 #include "Window.h"
+#include "Swapchain.h"
 
 class Engine
 {
@@ -16,11 +17,13 @@ class Engine
     Window          window;
     Surface         surface;
     Device          device;
+    Swapchain       swapchain;
 
 public:
     operator VkInstance&();
     operator VkPhysicalDevice&();
     operator VkDevice&();
+    operator Device&();
     operator VkSurfaceKHR&();
     operator Window&();
 

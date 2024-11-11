@@ -188,3 +188,18 @@ std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
 
     return {presentQueue, graphicsQueue};
 }
+
+Device::operator VkDevice&()
+{
+    return device;
+}
+
+uint32_t Device::GetGraphicsIndex()
+{
+    return graphicsIndex;
+}
+
+uint32_t Device::GetPresentIndex()
+{
+    return presentIndex;
+}

@@ -6,6 +6,7 @@ Engine::Engine()
     , window(Window(*this))
     , surface(Surface(*this))
     , device(Device(*this))
+    , swapchain(Swapchain(*this))
 {
 
 }
@@ -42,4 +43,8 @@ Engine::operator Window&()
 Engine::operator VkSurfaceKHR&()
 {
     return surface;
+}
+Engine::operator Device&()
+{
+    return device;
 }
