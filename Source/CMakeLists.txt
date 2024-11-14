@@ -8,6 +8,7 @@ set(SOURCES
     Surface.cpp
     Window.cpp
     Swapchain.cpp
+    Image.cpp
 )
 
 add_executable(${APP_NAME}
