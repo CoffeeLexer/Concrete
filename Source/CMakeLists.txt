@@ -9,6 +9,8 @@ set(SOURCES
     Window.cpp
     Swapchain.cpp
     Image.cpp
+    DescriptorSetLayout.cpp
+    PipelineLayout.cpp
 )
 
 add_executable(${APP_NAME}

@@ -1,6 +1,6 @@
 #include "DescriptorSetLayout.h"
-
-
+#include <stdexcept>
+#include "Engine.h"
 DescriptorSetLayout::DescriptorSetLayout(Engine &engine)
     : engine(engine)
 {
@@ -21,9 +21,9 @@ DescriptorSetLayout::DescriptorSetLayout(Engine &engine)
     };
 
     VkDevice device = engine;
-    VkResult result = vkCreateDescriptorSetLayout(device, ci, nullptr, &setLayout);
+    VkResult result = vkCreateDescriptorSetLayout(device, &ci, nullptr, &setLayout);
     if (result != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed Init DescriptorSet");     
+        throw std::runtime_error("Failed Init DescriptorSet");
     }
 }
