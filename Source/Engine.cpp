@@ -7,6 +7,7 @@ Engine::Engine()
     , surface(Surface(*this))
     , device(Device(*this))
     , swapchain(Swapchain(*this))
+    , pipeline(Pipeline(*this))
 {
 
 }
@@ -47,4 +48,8 @@ Engine::operator VkSurfaceKHR&()
 Engine::operator Device&()
 {
     return device;
+}
+Engine::operator Swapchain&()
+{
+    return swapchain;
 }

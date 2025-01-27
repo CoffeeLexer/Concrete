@@ -11,6 +11,8 @@ set(SOURCES
     Image.cpp
     DescriptorSetLayout.cpp
     PipelineLayout.cpp
+    # DescriptorPool.cpp
+    Pipeline.cpp
 )
 
 add_executable(${APP_NAME}
@@ -26,6 +28,9 @@ target_link_libraries(${APP_NAME}
     PUBLIC Vulkan::Vulkan
 )
 
+configure_file(Config.h.in Config.h)
+
 target_include_directories(${APP_NAME}
+    PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
     PRIVATE .
 )

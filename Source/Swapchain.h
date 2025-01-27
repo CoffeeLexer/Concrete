@@ -7,6 +7,8 @@ class Swapchain
 {
     Engine &engine;
     VkSwapchainKHR swapchain;
+    VkFormat format;
+    VkExtent2D extent;
 
     VkPresentModeKHR GetBestPresentMode();
     VkSurfaceFormatKHR GetBestSurfaceFormat();
@@ -15,4 +17,6 @@ class Swapchain
 public:
     Swapchain(Engine& engine);
     ~Swapchain();
+    VkFormat GetFormat();
+    VkExtent2D GetExtent();
 };

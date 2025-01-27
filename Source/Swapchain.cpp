@@ -69,12 +69,24 @@ VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCaps()
     return caps; 
 }
 
+VkFormat Swapchain::GetFormat()
+{
+    return this->format;
+}
+
+VkExtent2D Swapchain::GetExtent()
+{
+    return this->extent;
+}
+
 Swapchain::Swapchain(Engine &engine)
     : engine(engine)
 {
     VkPresentModeKHR presentMode = GetBestPresentMode();
     const auto caps = GetSurfaceCaps();
     VkSurfaceFormatKHR format = GetBestSurfaceFormat();
+    this->format = format.format;
+    this->extent = caps.currentExtent;
     VkSurfaceKHR surface = engine;
     VkSwapchainCreateInfoKHR ci = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -82,9 +94,9 @@ Swapchain::Swapchain(Engine &engine)
         .flags = 0,
         .surface = surface,
         .minImageCount = caps.minImageCount,
-        .imageFormat = format.format,
+        .imageFormat = this->format,
         .imageColorSpace = format.colorSpace,
-        .imageExtent = caps.currentExtent,
+        .imageExtent = this->extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = caps.currentTransform,

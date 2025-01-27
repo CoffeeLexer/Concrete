@@ -1,6 +1,7 @@
 #include "DescriptorSetLayout.h"
 #include <stdexcept>
 #include "Engine.h"
+
 DescriptorSetLayout::DescriptorSetLayout(Engine &engine)
     : engine(engine)
 {
@@ -17,7 +18,7 @@ DescriptorSetLayout::DescriptorSetLayout(Engine &engine)
         .pNext = nullptr,
         .flags = 0,
         .bindingCount = 1,
-        .pBindings = &binding,
+        .pBindings = &binding, // layout (binding=X)
     };
 
     VkDevice device = engine;

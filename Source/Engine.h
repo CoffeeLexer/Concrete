@@ -8,6 +8,7 @@
 #include "Surface.h"
 #include "Window.h"
 #include "Swapchain.h"
+#include "Pipeline.h"
 
 class Engine
 {
@@ -18,6 +19,7 @@ class Engine
     Surface         surface;
     Device          device;
     Swapchain       swapchain;
+    Pipeline        pipeline;
 
 public:
     operator VkInstance&();
@@ -26,6 +28,7 @@ public:
     operator Device&();
     operator VkSurfaceKHR&();
     operator Window&();
+    operator Swapchain&();
 
     Engine();
     ~Engine();

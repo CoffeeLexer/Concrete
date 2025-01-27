@@ -10,7 +10,7 @@ PipelineLayout::PipelineLayout(Engine &engine)
         .pNext = nullptr,
         .flags = 0,
         .setLayoutCount = 0,
-        .pSetLayouts = nullptr,
+        .pSetLayouts = nullptr, // layout (set=X)
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = nullptr,
     };

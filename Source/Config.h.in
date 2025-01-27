@@ -1,0 +1,3 @@
+#pragma once
+#define TRIANGLE_VERT "@CMAKE_SOURCE_DIR@/Shader/triangle.vert.spv"
+#define TRIANGLE_FRAG "@CMAKE_SOURCE_DIR@/Shader/triangle.frag.spv"
