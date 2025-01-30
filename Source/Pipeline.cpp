@@ -34,60 +34,6 @@ VkShaderModule Pipeline::CreateShaderModule(std::vector<uint32_t> code)
     return module;
 }
 
-void Pipeline::CreateRenderPass()
-{
-    Swapchain &swapchain = engine;
-    VkFormat format = swapchain.GetFormat();
-    VkAttachmentDescription color_attachment = {
-        .flags = 0,
-        .format = format,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, // backbuffer
-    };
-
-    VkAttachmentReference color_attachment_ref = {
-        .attachment = 0,
-        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-
-    VkSubpassDescription color_subpass = {
-        .flags = 0,
-        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-        .inputAttachmentCount = 0,
-        .pInputAttachments = nullptr,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &color_attachment_ref,
-        .pResolveAttachments = nullptr,
-        .pDepthStencilAttachment = nullptr,
-        .preserveAttachmentCount = 0,
-        .pPreserveAttachments = nullptr,
-    };
-
-    VkRenderPassCreateInfo ci = {
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .attachmentCount = 1,
-        .pAttachments = &color_attachment,
-        .subpassCount = 1,
-        .pSubpasses = &color_subpass,
-        .dependencyCount = 0,
-        .pDependencies = nullptr,
-    };
-
-    VkDevice &device = engine;
-    VkResult status = vkCreateRenderPass(device, &ci, nullptr, &renderPass);
-    if (status != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed render pass create");
-    }
-}
-
 Pipeline::Pipeline(Engine &engine)
     : engine(engine)
 {
@@ -247,7 +193,7 @@ Pipeline::Pipeline(Engine &engine)
         throw std::runtime_error("Failed pipeline layout create");
     }
 
-    CreateRenderPass();
+    VkRenderPass renderPass = swapchain.GetRenderPass();
 
     VkGraphicsPipelineCreateInfo pipeline_ci = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -287,5 +233,9 @@ Pipeline::~Pipeline()
     VkDevice &device = engine;
     vkDestroyPipeline(device, pipeline, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-    vkDestroyRenderPass(device, renderPass, nullptr);
+}
+
+Pipeline::operator VkPipeline&()
+{
+    return pipeline;
 }

@@ -1,6 +1,7 @@
 #include "Swapchain.h"
 
 #include <stdexcept>
+#include <algorithm>
 
 #include "Engine.h"
 
@@ -15,8 +16,8 @@ VkPresentModeKHR Swapchain::GetBestPresentMode()
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, modes.data());
 
     VkPresentModeKHR priorities[] = {
-        VK_PRESENT_MODE_FIFO_KHR,
         VK_PRESENT_MODE_MAILBOX_KHR,
+        VK_PRESENT_MODE_FIFO_KHR,
         VK_PRESENT_MODE_FIFO_RELAXED_KHR,
         VK_PRESENT_MODE_IMMEDIATE_KHR,
     };
@@ -87,6 +88,14 @@ Swapchain::Swapchain(Engine &engine)
     VkSurfaceFormatKHR format = GetBestSurfaceFormat();
     this->format = format.format;
     this->extent = caps.currentExtent;
+
+    imageCount = 3;
+    imageCount = std::max(imageCount, caps.minImageCount);
+    if (caps.maxImageCount) // 0 => no limit
+    {
+        imageCount = std::min(imageCount, caps.maxImageCount);
+    }
+
     VkSurfaceKHR surface = engine;
     VkSwapchainCreateInfoKHR ci = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -99,7 +108,7 @@ Swapchain::Swapchain(Engine &engine)
         .imageExtent = this->extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .preTransform = caps.currentTransform,
+        .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
         .presentMode = presentMode,
         .clipped = VK_TRUE,
         .oldSwapchain = nullptr,
@@ -132,10 +141,104 @@ Swapchain::Swapchain(Engine &engine)
     {
         throw std::runtime_error("Failed creating swapchain");
     }
+
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
+    images.resize(imageCount);
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
+    CreateImageViews();
+    CreateFramebuffers();
+
+    renderPass = new RenderPass(engine);
 }
 
 Swapchain::~Swapchain()
 {
     VkDevice device = engine;
+    delete renderPass;
     vkDestroySwapchainKHR(device, swapchain, nullptr);
+}
+
+void Swapchain::CreateImageViews()
+{
+    imageViews.resize(imageCount);
+
+    VkDevice &device = engine;
+
+    for (uint32_t i = 0; i < imageViews.size(); i++)
+    {
+        VkImageViewCreateInfo ci = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .image = images[i],
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = format,
+            .components = VkComponentMapping {
+                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+            },
+            .subresourceRange = VkImageSubresourceRange {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+        };
+
+        VkResult status = vkCreateImageView(device, &ci, nullptr, &imageViews[i]);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed swapchain image view");
+        }
+    }
+}
+
+void Swapchain::CreateFramebuffers()
+{
+    framebuffers.resize(imageCount);
+
+    VkDevice &device = engine;
+    for (uint32_t i = 0; i < imageCount; i++)
+    {
+        VkImageView attachments[] = {
+            imageViews[i],
+        };
+
+        VkFramebufferCreateInfo ci = {
+            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .renderPass = *renderPass,
+            .attachmentCount = 1,
+            .pAttachments = attachments,
+            .width = extent.width,
+            .height = extent.height,
+            .layers = 1,
+        };
+
+        VkResult status = vkCreateFramebuffer(device, &ci, nullptr, &framebuffers[i]);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed framebuffers create");
+        }
+    }
+
+}
+
+VkRenderPass Swapchain::GetRenderPass()
+{
+    return *renderPass;
+}
+
+uint32_t Swapchain::GetImageCount()
+{
+    return imageCount;
+}
+
+VkFramebuffer Swapchain::GetFramebuffer(uint32_t i)
+{
+    return framebuffers[i];
 }

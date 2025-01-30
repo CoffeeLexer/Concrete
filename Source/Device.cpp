@@ -203,3 +203,11 @@ uint32_t Device::GetPresentIndex()
 {
     return presentIndex;
 }
+VkQueue& Device::GetGraphicsQueue()
+{
+    return graphicsQueue;
+}
+VkQueue& Device::GetPresentQueue()
+{
+    return presentQueue;
+}

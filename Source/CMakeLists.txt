@@ -11,7 +11,7 @@ set(SOURCES
     Image.cpp
     DescriptorSetLayout.cpp
     PipelineLayout.cpp
-    # DescriptorPool.cpp
+    RenderPass.cpp
     Pipeline.cpp
 )
 

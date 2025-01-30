@@ -30,4 +30,7 @@ public:
     uint32_t GetPresentIndex();
 
     VkPresentModeKHR GetBestPresentMode();
+
+    VkQueue& GetGraphicsQueue();
+    VkQueue& GetPresentQueue();
 };

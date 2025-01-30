@@ -7,7 +7,6 @@ class Engine;
 class Pipeline
 {
     Engine& engine;
-    VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 
@@ -16,4 +15,6 @@ class Pipeline
 public:
     Pipeline(Engine& engine);
     ~Pipeline();
+
+    operator VkPipeline&();
 };
