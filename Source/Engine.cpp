@@ -1,5 +1,7 @@
 #include "Engine.h"
 
+#include <stdexcept>
+
 Engine::Engine()
     : instance(Instance(*this))
     , physicalDevice(PhysicalDevice(*this))
@@ -21,7 +23,7 @@ void Engine::run()
     VkCommandPoolCreateInfo pool_ci = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
-        .flags = 0,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
         .queueFamilyIndex = 0,
     };
 
@@ -33,22 +35,28 @@ void Engine::run()
         .pNext = nullptr,
         .commandPool = commandPool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1,
+        .commandBufferCount = 3,
     };
 
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(device, &ai, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .pInheritanceInfo = nullptr,
-    };
+    VkCommandBuffer commandBuffers[3];
+    vkAllocateCommandBuffers(device, &ai, commandBuffers);
 
     uint32_t currentImage = 0;
     while (window.IsValid())
     {
+        VkCommandBuffer &commandBuffer = commandBuffers[currentImage];
+
+        VkCommandBufferBeginInfo beginInfo = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .pInheritanceInfo = nullptr,
+        };
+
+        uint32_t imageIndex;
+        VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+            swapchain.GetImageSemaphore(currentImage), nullptr, &imageIndex);
+
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
         VkClearValue clearValue = {
             .color = VkClearColorValue {
@@ -95,19 +103,58 @@ void Engine::run()
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
 
+        status = vkEndCommandBuffer(commandBuffer);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed draw cmd");
+        }
+
+        VkSemaphore imageSemaphore[] = {
+            swapchain.GetImageSemaphore(currentImage),
+        };
+
+        VkSemaphore renderSemaphore[] = {
+            swapchain.GetRenderSemaphore(currentImage),
+        };
+
+        VkPipelineStageFlags waitStage[] = {
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        };
+
         VkSubmitInfo submitInfo = {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = nullptr,
-            .waitSemaphoreCount = 0,
-            .pWaitSemaphores = nullptr,
-            .pWaitDstStageMask = nullptr,
-            .commandBufferCount = 0,
-            .pCommandBuffers = nullptr,
-            .signalSemaphoreCount = 0,
-            .pSignalSemaphores = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = imageSemaphore,
+            .pWaitDstStageMask = waitStage,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &commandBuffer,
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = renderSemaphore,
         };
 
-        vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, nullptr);
+        status = vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, nullptr);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed queue submit");
+        }
+
+        VkSwapchainKHR swapchains[] = {
+            swapchain,
+        };
+
+        VkPresentInfoKHR presentInfo = {
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = renderSemaphore,
+            .swapchainCount = 1,
+            .pSwapchains = swapchains,
+            .pImageIndices = &imageIndex,
+            .pResults = nullptr,
+        };
+
+        status = vkQueuePresentKHR(device.GetPresentQueue(), &presentInfo);
 
         window.PollEvents();
         window.SwapBuffers();

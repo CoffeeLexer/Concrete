@@ -145,10 +145,12 @@ Swapchain::Swapchain(Engine &engine)
     vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
     images.resize(imageCount);
     vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
-    CreateImageViews();
-    CreateFramebuffers();
 
     renderPass = new RenderPass(engine);
+
+    CreateImageViews();
+    CreateFramebuffers();
+    CreateSemaphores();
 }
 
 Swapchain::~Swapchain()
@@ -241,4 +243,47 @@ uint32_t Swapchain::GetImageCount()
 VkFramebuffer Swapchain::GetFramebuffer(uint32_t i)
 {
     return framebuffers[i];
+}
+
+void Swapchain::CreateSemaphores()
+{
+    renderSemaphores.resize(imageCount);
+    imageSemaphores.resize(imageCount);
+
+    VkSemaphoreCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+    };
+
+    VkResult status = VK_SUCCESS;
+    VkDevice device = engine;
+    for (uint32_t i = 0; i < imageCount; i++)
+    {
+        status = vkCreateSemaphore(device, &ci, nullptr, &renderSemaphores[i]);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed semaphore creation (wait)");
+        }
+        status = vkCreateSemaphore(device, &ci, nullptr, &imageSemaphores[i]);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed semaphore creation (availible)");
+        }
+    }
+}
+
+VkSemaphore Swapchain::GetRenderSemaphore(uint32_t i)
+{
+    return renderSemaphores[i];
+}
+
+VkSemaphore Swapchain::GetImageSemaphore(uint32_t i)
+{
+    return imageSemaphores[i];
+}
+
+Swapchain::operator VkSwapchainKHR&()
+{
+    return swapchain;
 }

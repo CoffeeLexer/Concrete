@@ -22,12 +22,15 @@ class Swapchain
     std::vector<VkImageView> imageViews;
     std::vector<VkImage> images;
     std::vector<VkFramebuffer> framebuffers;
+    std::vector<VkSemaphore> renderSemaphores;
+    std::vector<VkSemaphore> imageSemaphores;
 
     VkPresentModeKHR GetBestPresentMode();
     VkSurfaceFormatKHR GetBestSurfaceFormat();
     VkSurfaceCapabilitiesKHR GetSurfaceCaps();
     void CreateImageViews();
     void CreateFramebuffers();
+    void CreateSemaphores();
 
 public:
     Swapchain(Engine& engine);
@@ -37,4 +40,7 @@ public:
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();
     VkFramebuffer GetFramebuffer(uint32_t i);
+    VkSemaphore GetRenderSemaphore(uint32_t i);
+    VkSemaphore GetImageSemaphore(uint32_t i);
+    operator VkSwapchainKHR&();
 };
