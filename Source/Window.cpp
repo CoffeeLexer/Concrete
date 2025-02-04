@@ -9,8 +9,27 @@
 #include "Instance.h"
 #include "Engine.h"
 
+WindowUserData::WindowUserData()
+{
+    extent = {0, 0};
+}
+
+void WindowUserData::SetFramebufferSize(int width, int height)
+{
+    extent = {
+        static_cast<uint32_t>(width),
+        static_cast<uint32_t>(height),
+    };
+}
+
 namespace {
     uint32_t globalInstanceCount = 0;
+
+    WindowUserData& GetUserDataRef(GLFWwindow *window)
+    {
+        auto ptr = glfwGetWindowUserPointer(window);
+        return *reinterpret_cast<WindowUserData*>(ptr);
+    }
 
     void CallbackError(int err, const char* description)
     {
@@ -21,6 +40,12 @@ namespace {
     {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+
+    void CallbackFramebufferSize(GLFWwindow *window, int width, int height)
+    {
+        auto &userData = GetUserDataRef(window);
+        userData.SetFramebufferSize(width, height);
     }
 
     void GlobalInit()
@@ -65,13 +90,20 @@ Window::Window(Engine &engine)
         exit(1);
     }
 
+    glfwSetWindowUserPointer(window, &userData);
     glfwSetKeyCallback(window, CallbackKey);
+    glfwSetFramebufferSizeCallback(window, CallbackFramebufferSize);
 }
 
 Window::~Window()
 {
     glfwDestroyWindow(window);
     GlobalTerminate();
+}
+
+Watcher<VkExtent2D> Window::BindWatcher()
+{
+    return {userData.extent};
 }
 
 void Window::SwapBuffers()

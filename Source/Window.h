@@ -1,15 +1,23 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
+#include "Watcher.h"
 
 class Engine;
 class GLFWwindow;
+
+struct WindowUserData
+{
+    VkExtent2D extent;
+    WindowUserData();
+    void SetFramebufferSize(int width, int height);
+};
 
 class Window
 {
     Engine &engine;
     GLFWwindow *window;
-
+    WindowUserData userData;
 public:
 
     Window(Engine &engine);
@@ -20,4 +28,5 @@ public:
     bool IsValid();
 
     VkSurfaceKHR CreateSurface();
+    Watcher<VkExtent2D> BindWatcher();
 };
