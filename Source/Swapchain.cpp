@@ -60,7 +60,6 @@ VkSurfaceFormatKHR Swapchain::GetBestSurfaceFormat()
     return formats.at(0);
 }
 
-
 VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCaps()
 {
     VkPhysicalDevice physicalDevice = engine;
@@ -82,6 +81,7 @@ VkExtent2D Swapchain::GetExtent()
 
 Swapchain::Swapchain(Engine &engine)
     : engine(engine)
+    , currentImage(0)
 {
     VkPresentModeKHR presentMode = GetBestPresentMode();
     const auto caps = GetSurfaceCaps();
@@ -151,6 +151,7 @@ Swapchain::Swapchain(Engine &engine)
     CreateImageViews();
     CreateFramebuffers();
     CreateSemaphores();
+    AllocateCommandPool();
 }
 
 Swapchain::~Swapchain()
@@ -230,19 +231,150 @@ void Swapchain::CreateFramebuffers()
 
 }
 
+void Swapchain::AllocateCommandPool()
+{
+    VkCommandPoolCreateInfo pool_ci = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = 0,
+    };
+
+    VkDevice &device = engine;
+    vkCreateCommandPool(device, &pool_ci, nullptr, &commandPool);
+
+    VkCommandBufferAllocateInfo ai = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = commandPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = imageCount,
+    };
+
+    commandBuffers.resize(imageCount);
+    vkAllocateCommandBuffers(device, &ai, commandBuffers.data());
+}
+
+void Swapchain::Draw()
+{
+    // vkDeviceWaitIdle(device);
+    VkCommandBuffer &commandBuffer = commandBuffers[currentImage];
+
+    VkCommandBufferBeginInfo beginInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .pInheritanceInfo = nullptr,
+    };
+
+    Device &device = engine;
+    uint32_t imageIndex;
+    VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+        imageSemaphores[currentImage], nullptr, &imageIndex);
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    VkClearValue clearValue = {
+        .color = VkClearColorValue {
+            .float32 = {0.0f, 0.0f, 0.0f, 1.0f},
+        },
+    };
+
+    VkRect2D renderArea = {
+        .offset = VkOffset2D {0, 0},
+        .extent = extent,
+    };
+
+    VkRenderPassBeginInfo renderPassBegin = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = nullptr,
+        .renderPass = *renderPass,
+        .framebuffer = framebuffers[currentImage],
+        .renderArea = renderArea,
+        .clearValueCount = 1,
+        .pClearValues = &clearValue,
+    };
+
+    Pipeline &pipeline = engine;
+    vkCmdBeginRenderPass(commandBuffer, &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    VkViewport viewport {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = static_cast<float>(extent.width),
+        .height = static_cast<float>(extent.height),
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor {
+        .offset = {0, 0},
+        .extent = extent,
+    };
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    vkCmdEndRenderPass(commandBuffer);
+
+    status = vkEndCommandBuffer(commandBuffer);
+    if (status != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed draw cmd");
+    }
+
+    VkSemaphore imageSemaphore[] = {
+        imageSemaphores[currentImage],
+    };
+
+    VkSemaphore renderSemaphore[] = {
+        renderSemaphores[currentImage],
+    };
+
+    VkPipelineStageFlags waitStage[] = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    };
+
+    VkSubmitInfo submitInfo = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = imageSemaphore,
+        .pWaitDstStageMask = waitStage,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &commandBuffer,
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = renderSemaphore,
+    };
+
+    status = vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, nullptr);
+    if (status != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed queue submit");
+    }
+
+    VkSwapchainKHR swapchains[] = {
+        swapchain,
+    };
+
+    VkPresentInfoKHR presentInfo = {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = renderSemaphore,
+        .swapchainCount = 1,
+        .pSwapchains = swapchains,
+        .pImageIndices = &imageIndex,
+        .pResults = nullptr,
+    };
+
+    status = vkQueuePresentKHR(device.GetPresentQueue(), &presentInfo);
+}
+
 VkRenderPass Swapchain::GetRenderPass()
 {
     return *renderPass;
-}
-
-uint32_t Swapchain::GetImageCount()
-{
-    return imageCount;
-}
-
-VkFramebuffer Swapchain::GetFramebuffer(uint32_t i)
-{
-    return framebuffers[i];
 }
 
 void Swapchain::CreateSemaphores()
@@ -271,16 +403,6 @@ void Swapchain::CreateSemaphores()
             throw std::runtime_error("Failed semaphore creation (availible)");
         }
     }
-}
-
-VkSemaphore Swapchain::GetRenderSemaphore(uint32_t i)
-{
-    return renderSemaphores[i];
-}
-
-VkSemaphore Swapchain::GetImageSemaphore(uint32_t i)
-{
-    return imageSemaphores[i];
 }
 
 Swapchain::operator VkSwapchainKHR&()

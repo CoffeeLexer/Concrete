@@ -17,13 +17,16 @@ class Swapchain
     VkSwapchainKHR swapchain;
     VkFormat format;
     VkExtent2D extent;
+    VkCommandPool commandPool;
     uint32_t imageCount;
+    uint32_t currentImage;
 
     std::vector<VkImageView> imageViews;
     std::vector<VkImage> images;
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkSemaphore> renderSemaphores;
     std::vector<VkSemaphore> imageSemaphores;
+    std::vector<VkCommandBuffer> commandBuffers;
 
     VkPresentModeKHR GetBestPresentMode();
     VkSurfaceFormatKHR GetBestSurfaceFormat();
@@ -31,6 +34,7 @@ class Swapchain
     void CreateImageViews();
     void CreateFramebuffers();
     void CreateSemaphores();
+    void AllocateCommandPool();
 
 public:
     Swapchain(Engine& engine);
@@ -40,7 +44,6 @@ public:
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();
     VkFramebuffer GetFramebuffer(uint32_t i);
-    VkSemaphore GetRenderSemaphore(uint32_t i);
-    VkSemaphore GetImageSemaphore(uint32_t i);
     operator VkSwapchainKHR&();
+    void Draw();
 };

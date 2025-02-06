@@ -26,6 +26,7 @@ public:
     operator VkPhysicalDevice&();
     operator VkDevice&();
     operator Device&();
+    operator Pipeline&();
     operator VkSurfaceKHR&();
     operator Window&();
     operator Swapchain&();
