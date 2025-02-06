@@ -74,11 +74,6 @@ VkFormat Swapchain::GetFormat()
     return this->format;
 }
 
-VkExtent2D Swapchain::GetExtent()
-{
-    return this->extent;
-}
-
 Swapchain::Swapchain(Engine &engine)
     : engine(engine)
     , currentImage(0)

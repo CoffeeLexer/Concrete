@@ -40,7 +40,6 @@ public:
     Swapchain(Engine& engine);
     ~Swapchain();
     VkFormat GetFormat();
-    VkExtent2D GetExtent();
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();
     VkFramebuffer GetFramebuffer(uint32_t i);
