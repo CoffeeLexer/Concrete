@@ -28,5 +28,5 @@ public:
     bool IsValid();
 
     VkSurfaceKHR CreateSurface();
-    Watcher<VkExtent2D> BindWatcher();
+    Watcher<VkExtent2D> BindExtent();
 };

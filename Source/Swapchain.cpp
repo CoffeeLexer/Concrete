@@ -257,8 +257,10 @@ void Swapchain::AllocateCommandPool()
 
 void Swapchain::Draw()
 {
+    Device &device = engine;
     // vkDeviceWaitIdle(device);
     VkCommandBuffer &commandBuffer = commandBuffers[currentImage];
+    // vkResetCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
     VkCommandBufferBeginInfo beginInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -267,7 +269,6 @@ void Swapchain::Draw()
         .pInheritanceInfo = nullptr,
     };
 
-    Device &device = engine;
     uint32_t imageIndex;
     VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
         imageSemaphores[currentImage], nullptr, &imageIndex);
@@ -275,7 +276,7 @@ void Swapchain::Draw()
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
     VkClearValue clearValue = {
         .color = VkClearColorValue {
-            .float32 = {0.0f, 0.0f, 0.0f, 1.0f},
+            .float32 = {1.0f, 0.0f, 0.0f, 1.0f},
         },
     };
 

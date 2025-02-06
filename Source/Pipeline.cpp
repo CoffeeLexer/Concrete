@@ -36,6 +36,7 @@ VkShaderModule Pipeline::CreateShaderModule(std::vector<uint32_t> code)
 
 Pipeline::Pipeline(Engine &engine)
     : engine(engine)
+    , extentWatcher(static_cast<Window&>(engine).BindExtent())
 {
     auto vertModule = CreateShaderModule(triangle_vert_code);
     auto fragModule = CreateShaderModule(triangle_frag_code);
@@ -87,7 +88,7 @@ Pipeline::Pipeline(Engine &engine)
     };
 
     Swapchain &swapchain = engine;
-    VkExtent2D extent = swapchain.GetExtent();
+    VkExtent2D extent = extentWatcher.Current();
 
     VkViewport viewport = {
         .x = 0.0f,

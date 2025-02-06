@@ -12,18 +12,36 @@ public:
     {
         copy = object;
     }
-    bool hasUpdated()
+
+    void Reset()
+    {
+        *object = copy;
+        copy = object;
+    }
+
+    bool HasChanged()
     {
         return std::memcmp(&object, &copy, sizeof(T));
     }
-    bool hasUpdated(T* oldValue)
+
+    bool HasChanged(T* oldValue)
     {
-        if (hasUpdated())
+        if (HasChanged())
         {
-            *oldValue = copy;
-            copy = object;
+            Reset();
             return true;
         }
         return false;
+    }
+
+    T Resync()
+    {
+        Reset();
+        return copy;
+    }
+
+    T Current()
+    {
+        return copy;
     }
 };

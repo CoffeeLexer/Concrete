@@ -101,7 +101,7 @@ Window::~Window()
     GlobalTerminate();
 }
 
-Watcher<VkExtent2D> Window::BindWatcher()
+Watcher<VkExtent2D> Window::BindExtent()
 {
     return {userData.extent};
 }
