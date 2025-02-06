@@ -12,4 +12,6 @@ public:
     operator VkSurfaceKHR&();
     Surface(Engine &engine);
     ~Surface();
+    VkSurfaceCapabilitiesKHR GetCaps();
+    VkSurfaceFormatKHR GetBestFormat();
 };

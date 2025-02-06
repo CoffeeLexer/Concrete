@@ -28,6 +28,7 @@ public:
     operator Device&();
     operator Pipeline&();
     operator VkSurfaceKHR&();
+    operator Surface&();
     operator Window&();
     operator Swapchain&();
 

@@ -33,42 +33,6 @@ VkPresentModeKHR Swapchain::GetBestPresentMode()
     return modes.at(0);
 }
 
-VkSurfaceFormatKHR Swapchain::GetBestSurfaceFormat()
-{
-    VkPhysicalDevice physicalDevice = engine;
-    VkSurfaceKHR surface = engine;
-    uint32_t count;
-
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
-    std::vector<VkSurfaceFormatKHR> formats;
-    formats.resize(count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, formats.data());
-
-    VkFormat priorities[] = {
-        VK_FORMAT_R8G8B8A8_UNORM,
-        VK_FORMAT_R8G8B8A8_SRGB,
-    };
-
-    for (const auto& p : priorities)
-    {
-        for (uint32_t i = 0; i < count; i++)
-        {
-            if (p == formats.at(i).format)
-                return formats.at(i);
-        }
-    }
-    return formats.at(0);
-}
-
-VkSurfaceCapabilitiesKHR Swapchain::GetSurfaceCaps()
-{
-    VkPhysicalDevice physicalDevice = engine;
-    VkSurfaceKHR surface = engine;
-    VkSurfaceCapabilitiesKHR caps;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &caps);
-    return caps; 
-}
-
 VkFormat Swapchain::GetFormat()
 {
     return this->format;
@@ -79,8 +43,9 @@ Swapchain::Swapchain(Engine &engine)
     , currentImage(0)
 {
     VkPresentModeKHR presentMode = GetBestPresentMode();
-    const auto caps = GetSurfaceCaps();
-    VkSurfaceFormatKHR format = GetBestSurfaceFormat();
+    Surface &surface = engine;
+    const auto caps = surface.GetCaps();
+    VkSurfaceFormatKHR format = surface.GetBestFormat();
     this->format = format.format;
     this->extent = caps.currentExtent;
 
@@ -91,7 +56,6 @@ Swapchain::Swapchain(Engine &engine)
         imageCount = std::min(imageCount, caps.maxImageCount);
     }
 
-    VkSurfaceKHR surface = engine;
     VkSwapchainCreateInfoKHR ci = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,

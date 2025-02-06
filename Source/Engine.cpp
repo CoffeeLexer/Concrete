@@ -49,6 +49,10 @@ Engine::operator VkSurfaceKHR&()
 {
     return surface;
 }
+Engine::operator Surface&()
+{
+    return surface;
+}
 Engine::operator Device&()
 {
     return device;
