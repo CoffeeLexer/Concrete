@@ -27,6 +27,7 @@ class Swapchain
     std::vector<VkSemaphore> renderSemaphores;
     std::vector<VkSemaphore> imageSemaphores;
     std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkFence> renderFences;
 
     VkPresentModeKHR GetBestPresentMode();
     VkSurfaceFormatKHR GetBestSurfaceFormat();
@@ -34,6 +35,7 @@ class Swapchain
     void CreateImageViews();
     void CreateFramebuffers();
     void CreateSemaphores();
+    void CreateFences();
     void AllocateCommandPool();
 
 public:

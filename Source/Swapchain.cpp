@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <thread>
+#include <chrono>
 
 #include "Engine.h"
 
@@ -111,6 +113,7 @@ Swapchain::Swapchain(Engine &engine)
     CreateFramebuffers();
     CreateSemaphores();
     AllocateCommandPool();
+    CreateFences();
 }
 
 Swapchain::~Swapchain()
@@ -154,6 +157,27 @@ void Swapchain::CreateImageViews()
         if (status != VK_SUCCESS)
         {
             throw std::runtime_error("Failed swapchain image view");
+        }
+    }
+}
+
+void Swapchain::CreateFences()
+{
+    renderFences.resize(imageCount);
+
+    VkDevice &device = engine;
+    VkFenceCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+    };
+
+    for (uint32_t i = 0; i < imageCount; i++)
+    {
+        VkResult status = vkCreateFence(device, &ci, nullptr, &renderFences[i]);
+        if (status != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed fence create");
         }
     }
 }
@@ -216,7 +240,10 @@ void Swapchain::AllocateCommandPool()
 
 void Swapchain::Draw()
 {
+    // std::this_thread::sleep_for(std::chrono::milliseconds(10));
     Device &device = engine;
+    VkFence &fence = renderFences[currentImage];
+    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
     // vkDeviceWaitIdle(device);
     VkCommandBuffer &commandBuffer = commandBuffers[currentImage];
     // vkResetCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
@@ -232,10 +259,12 @@ void Swapchain::Draw()
     VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
         imageSemaphores[currentImage], nullptr, &imageIndex);
 
+    vkResetFences(device, 1, &fence);
+
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
     VkClearValue clearValue = {
         .color = VkClearColorValue {
-            .float32 = {1.0f, 0.0f, 0.0f, 1.0f},
+            .float32 = {1.0f, 0.0f, 1.0f, 1.0f},
         },
     };
 
@@ -293,7 +322,7 @@ void Swapchain::Draw()
     };
 
     VkPipelineStageFlags waitStage[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
     };
 
     VkSubmitInfo submitInfo = {
@@ -308,15 +337,11 @@ void Swapchain::Draw()
         .pSignalSemaphores = renderSemaphore,
     };
 
-    status = vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, nullptr);
+    status = vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, fence);
     if (status != VK_SUCCESS)
     {
         throw std::runtime_error("Failed queue submit");
     }
-
-    VkSwapchainKHR swapchains[] = {
-        swapchain,
-    };
 
     VkPresentInfoKHR presentInfo = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -324,12 +349,18 @@ void Swapchain::Draw()
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = renderSemaphore,
         .swapchainCount = 1,
-        .pSwapchains = swapchains,
+        .pSwapchains = &swapchain,
         .pImageIndices = &imageIndex,
         .pResults = nullptr,
     };
 
     status = vkQueuePresentKHR(device.GetPresentQueue(), &presentInfo);
+    if (status != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed queue present");
+    }
+
+    currentImage = ++currentImage % imageCount;
 }
 
 VkRenderPass Swapchain::GetRenderPass()
