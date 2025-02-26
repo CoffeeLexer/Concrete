@@ -194,20 +194,20 @@ Device::operator VkDevice&()
     return device;
 }
 
-uint32_t Device::GetGraphicsIndex()
+uint32_t Device::GetGraphicsIndex() const
 {
     return graphicsIndex;
 }
 
-uint32_t Device::GetPresentIndex()
+uint32_t Device::GetPresentIndex() const
 {
     return presentIndex;
 }
-VkQueue& Device::GetGraphicsQueue()
+VkQueue Device::GetGraphicsQueue() const
 {
     return graphicsQueue;
 }
-VkQueue& Device::GetPresentQueue()
+VkQueue Device::GetPresentQueue() const
 {
     return presentQueue;
 }

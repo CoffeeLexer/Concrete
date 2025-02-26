@@ -45,6 +45,9 @@ set(SOURCES
     PipelineLayout.cpp
     RenderPass.cpp
     Pipeline.cpp
+    UI.cpp
+        UI.h
+        Master.h
 )
 
 add_executable(${APP_NAME}

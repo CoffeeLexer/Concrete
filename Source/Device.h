@@ -26,11 +26,11 @@ public:
     Device(Engine &engine);
     ~Device();
 
-    uint32_t GetGraphicsIndex();
-    uint32_t GetPresentIndex();
+    uint32_t GetGraphicsIndex() const;
+    uint32_t GetPresentIndex() const;
 
     VkPresentModeKHR GetBestPresentMode();
 
-    VkQueue& GetGraphicsQueue();
-    VkQueue& GetPresentQueue();
+    VkQueue GetGraphicsQueue() const;
+    VkQueue GetPresentQueue() const;
 };

@@ -4,7 +4,7 @@
 
 Engine::Engine()
     : instance(Instance(*this))
-    , physicalDevice(PhysicalDevice(*this))
+    , physicalDevice(PhysicalDevice::FindBest(12*this))
     , window(Window(*this))
     , surface(Surface(*this))
     , device(Device(*this))

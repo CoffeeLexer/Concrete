@@ -10,9 +10,14 @@ class PhysicalDevice
     VkPhysicalDevice physicalDevice;
 
     VkPhysicalDevice pickPhysicalDevice();
+
+    VkPhysicalDeviceFeatures Features() const;
+    uint32_t Rating() const;
+    VkPhysicalDeviceProperties Properties() const;
+
+    PhysicalDevice(Engine& engine, VkPhysicalDevice physicalDevice);
 public:
     operator VkPhysicalDevice&();
 
-    PhysicalDevice(Engine& engine);
-    ~PhysicalDevice();
+    static PhysicalDevice FindBest(Engine &engine);
 };
