@@ -7,8 +7,8 @@
 RenderPass::RenderPass(Engine& engine)
     : engine(engine)
 {
-    Swapchain &swapchain = engine;
-    VkFormat format = swapchain.GetFormat();
+    Backbuffer &backbuffer = engine;
+    VkFormat format = backbuffer.GetFormat();
 
     VkAttachmentDescription attachment = {
         .flags = 0,

@@ -106,6 +106,11 @@ Watcher<VkExtent2D> Window::BindExtent()
     return {userData.extent};
 }
 
+Window::operator GLFWwindow*()
+{
+    return window;
+}
+
 void Window::SwapBuffers()
 {
     // OpenGL implementation only

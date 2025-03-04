@@ -1,4 +1,4 @@
-#include "Swapchain.h"
+#include "Backbuffer.h"
 
 #include <stdexcept>
 #include <algorithm>
@@ -7,7 +7,7 @@
 
 #include "Engine.h"
 
-VkPresentModeKHR Swapchain::GetBestPresentMode()
+VkPresentModeKHR Backbuffer::GetBestPresentMode()
 {
     uint32_t count;
     const VkSurfaceKHR &surface = engine;
@@ -35,14 +35,15 @@ VkPresentModeKHR Swapchain::GetBestPresentMode()
     return modes.at(0);
 }
 
-VkFormat Swapchain::GetFormat()
+VkFormat Backbuffer::GetFormat()
 {
     return this->format;
 }
 
-Swapchain::Swapchain(Engine &engine)
+Backbuffer::Backbuffer(Engine &engine)
     : engine(engine)
     , currentImage(0)
+    , ui(engine)
 {
     VkPresentModeKHR presentMode = GetBestPresentMode();
     Surface &surface = engine;
@@ -116,14 +117,14 @@ Swapchain::Swapchain(Engine &engine)
     CreateFences();
 }
 
-Swapchain::~Swapchain()
+Backbuffer::~Backbuffer()
 {
     VkDevice device = engine;
     delete renderPass;
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
-void Swapchain::CreateImageViews()
+void Backbuffer::CreateImageViews()
 {
     imageViews.resize(imageCount);
 
@@ -161,7 +162,7 @@ void Swapchain::CreateImageViews()
     }
 }
 
-void Swapchain::CreateFences()
+void Backbuffer::CreateFences()
 {
     renderFences.resize(imageCount);
 
@@ -182,7 +183,7 @@ void Swapchain::CreateFences()
     }
 }
 
-void Swapchain::CreateFramebuffers()
+void Backbuffer::CreateFramebuffers()
 {
     framebuffers.resize(imageCount);
 
@@ -214,7 +215,7 @@ void Swapchain::CreateFramebuffers()
 
 }
 
-void Swapchain::AllocateCommandPool()
+void Backbuffer::AllocateCommandPool()
 {
     VkCommandPoolCreateInfo pool_ci = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -238,10 +239,11 @@ void Swapchain::AllocateCommandPool()
     vkAllocateCommandBuffers(device, &ai, commandBuffers.data());
 }
 
-void Swapchain::Draw()
+void Backbuffer::Draw()
 {
     // std::this_thread::sleep_for(std::chrono::milliseconds(10));
     Device &device = engine;
+    VkFramebuffer &framebuffer = framebuffers[currentImage];
     VkFence &fence = renderFences[currentImage];
     vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
     // vkDeviceWaitIdle(device);
@@ -267,6 +269,10 @@ void Swapchain::Draw()
             .float32 = {1.0f, 0.0f, 1.0f, 1.0f},
         },
     };
+
+    ui.Start();
+    ImGui::ShowDemoWindow();
+    ui.End(commandBuffer, extent);
 
     VkRect2D renderArea = {
         .offset = VkOffset2D {0, 0},
@@ -363,12 +369,22 @@ void Swapchain::Draw()
     currentImage = ++currentImage % imageCount;
 }
 
-VkRenderPass Swapchain::GetRenderPass()
+uint32_t Backbuffer::GetIndex()
+{
+    return currentImage;
+}
+
+VkRenderPass Backbuffer::GetRenderPass()
 {
     return *renderPass;
 }
 
-void Swapchain::CreateSemaphores()
+uint32_t Backbuffer::GetImageCount()
+{
+    return imageCount;
+}
+
+void Backbuffer::CreateSemaphores()
 {
     renderSemaphores.resize(imageCount);
     imageSemaphores.resize(imageCount);
@@ -396,7 +412,17 @@ void Swapchain::CreateSemaphores()
     }
 }
 
-Swapchain::operator VkSwapchainKHR&()
+VkImageView Backbuffer::GetView(uint32_t i)
+{
+    return imageViews[i];
+}
+
+Backbuffer::operator VkSwapchainKHR&()
 {
     return swapchain;
+}
+
+Backbuffer::operator VkExtent2D&()
+{
+    return extent;
 }

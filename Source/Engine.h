@@ -7,7 +7,7 @@
 #include "Device.h"
 #include "Surface.h"
 #include "Window.h"
-#include "Swapchain.h"
+#include "Backbuffer.h"
 #include "Pipeline.h"
 
 class Engine
@@ -18,7 +18,7 @@ class Engine
     Window          window;
     Surface         surface;
     Device          device;
-    Swapchain       swapchain;
+    Backbuffer      backbuffer;
     Pipeline        pipeline;
 
 public:
@@ -30,7 +30,7 @@ public:
     operator VkSurfaceKHR&();
     operator Surface&();
     operator Window&();
-    operator Swapchain&();
+    operator Backbuffer&();
 
     Engine();
     ~Engine();

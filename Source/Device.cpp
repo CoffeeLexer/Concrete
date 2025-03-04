@@ -102,35 +102,6 @@ Device::Device(Engine &engine)
     vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
 }
 
-VkPresentModeKHR Device::GetBestPresentMode()
-{
-    uint32_t count;
-    const VkSurfaceKHR &surface = engine;
-    const VkPhysicalDevice &physicalDevice = engine;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
-    std::vector<VkPresentModeKHR> modes = {};
-    modes.resize(count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, modes.data());
-
-    VkPresentModeKHR priorities[] = {
-        VK_PRESENT_MODE_FIFO_KHR,
-        VK_PRESENT_MODE_MAILBOX_KHR,
-        VK_PRESENT_MODE_FIFO_RELAXED_KHR,
-        VK_PRESENT_MODE_IMMEDIATE_KHR,
-    };
-
-    for (const auto& p : priorities)
-    {
-        for (uint32_t i = 0; i < count; i++)
-        {
-            if (p == modes.at(i))
-                return p;
-        }
-    }
-    return modes.at(0);
-}
-
-
 Device::~Device()
 {
     vkDestroyDevice(device, nullptr);

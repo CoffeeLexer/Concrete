@@ -39,15 +39,13 @@ set(SOURCES
     PhysicalDevice.cpp
     Surface.cpp
     Window.cpp
-    Swapchain.cpp
+    Backbuffer.cpp
     Image.cpp
     DescriptorSetLayout.cpp
     PipelineLayout.cpp
     RenderPass.cpp
     Pipeline.cpp
     UI.cpp
-        UI.h
-        Master.h
 )
 
 add_executable(${APP_NAME}

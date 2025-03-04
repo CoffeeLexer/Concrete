@@ -4,11 +4,11 @@
 
 Engine::Engine()
     : instance(Instance(*this))
-    , physicalDevice(PhysicalDevice::FindBest(12*this))
+    , physicalDevice(PhysicalDevice::FindBest(*this))
     , window(Window(*this))
     , surface(Surface(*this))
     , device(Device(*this))
-    , swapchain(Swapchain(*this))
+    , backbuffer(Backbuffer(*this))
     , pipeline(Pipeline(*this))
 {
 
@@ -22,7 +22,7 @@ void Engine::run()
 {
     while (window.IsValid())
     {
-        swapchain.Draw();
+        backbuffer.Draw();
 
         window.PollEvents();
         window.SwapBuffers();
@@ -57,9 +57,9 @@ Engine::operator Device&()
 {
     return device;
 }
-Engine::operator Swapchain&()
+Engine::operator Backbuffer&()
 {
-    return swapchain;
+    return backbuffer;
 }
 Engine::operator Pipeline&()
 {

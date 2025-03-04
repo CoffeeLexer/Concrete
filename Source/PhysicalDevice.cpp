@@ -64,12 +64,17 @@ PhysicalDevice PhysicalDevice::FindBest(Engine& engine)
 
     vkEnumeratePhysicalDevices(instance, &count, devices.data());
 
+    std::pair<uint32_t, uint32_t> best = {
+        std::numeric_limits<uint32_t>::min(),
+        std::numeric_limits<uint32_t>::max(),
+    };
     for (uint32_t i = 0; i < count; i++)
     {
         auto device = PhysicalDevice(engine, devices[i]);
-
+        if (best.first < device.Rating())
+            best = { device.Rating(), i };
     }
 
-    return PhysicalDevice(engine, devices[i]);
+    return {engine, devices[best.second]};
 }
 

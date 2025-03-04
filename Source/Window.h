@@ -29,4 +29,6 @@ public:
 
     VkSurfaceKHR CreateSurface();
     Watcher<VkExtent2D> BindExtent();
+
+    operator GLFWwindow*();
 };

@@ -29,8 +29,6 @@ public:
     uint32_t GetGraphicsIndex() const;
     uint32_t GetPresentIndex() const;
 
-    VkPresentModeKHR GetBestPresentMode();
-
     VkQueue GetGraphicsQueue() const;
     VkQueue GetPresentQueue() const;
 };

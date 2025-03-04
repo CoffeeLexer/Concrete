@@ -3,12 +3,13 @@
 #include "vulkan/vulkan.h"
 
 #include "RenderPass.h"
+#include "UI.h"
 
 #include <vector>
 
 class Engine;
 
-class Swapchain
+class Backbuffer
 {
     Engine &engine;
 
@@ -20,6 +21,7 @@ class Swapchain
     VkCommandPool commandPool;
     uint32_t imageCount;
     uint32_t currentImage;
+    UI ui;
 
     std::vector<VkImageView> imageViews;
     std::vector<VkImage> images;
@@ -39,12 +41,18 @@ class Swapchain
     void AllocateCommandPool();
 
 public:
-    Swapchain(Engine& engine);
-    ~Swapchain();
+    Backbuffer(Engine& engine);
+    ~Backbuffer();
     VkFormat GetFormat();
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();
     VkFramebuffer GetFramebuffer(uint32_t i);
+    VkImageView GetView(uint32_t i);
     operator VkSwapchainKHR&();
+    operator VkExtent2D&();
+
+    void GetFramebuffer();
+
     void Draw();
+    uint32_t GetIndex();
 };

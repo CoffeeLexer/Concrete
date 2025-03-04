@@ -87,7 +87,7 @@ Pipeline::Pipeline(Engine &engine)
         .patchControlPoints = 1,
     };
 
-    Swapchain &swapchain = engine;
+    Backbuffer &backbuffer = engine;
     VkExtent2D extent = extentWatcher.Current();
 
     VkViewport viewport = {
@@ -194,7 +194,7 @@ Pipeline::Pipeline(Engine &engine)
         throw std::runtime_error("Failed pipeline layout create");
     }
 
-    VkRenderPass renderPass = swapchain.GetRenderPass();
+    VkRenderPass renderPass = backbuffer.GetRenderPass();
 
     VkGraphicsPipelineCreateInfo pipeline_ci = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
