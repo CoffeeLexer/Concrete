@@ -1,16 +1,15 @@
 #pragma once
 
+#include "Handle.h"
 #include "vulkan/vulkan.h"
 
 class Engine;
 
-class Surface
+class Surface : public Handle<VkSurfaceKHR>
 {
-    Engine &engine;
-    VkSurfaceKHR surface;
+protected:
+    Surface() = default;
 public:
-    operator VkSurfaceKHR&();
-    Surface(Engine &engine);
     ~Surface();
     VkSurfaceCapabilitiesKHR GetCaps();
     VkSurfaceFormatKHR GetBestFormat();

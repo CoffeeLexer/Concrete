@@ -1,16 +1,13 @@
 #pragma once
+#include "Handle.h"
 #include "vulkan/vulkan.h"
 
 class Engine;
 
-class Instance
+class Instance : public Handle<VkInstance>
 {
-    Engine &engine;
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
-public:
-    operator VkInstance&();
-
-    Instance(Engine &engine);
+protected:
+    Instance() = default;
+    void Create();
     ~Instance();
 };

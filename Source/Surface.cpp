@@ -11,22 +11,24 @@ namespace
     };
 }
 
-Surface::Surface(Engine &engine)
-    : engine(engine)
+void Surface::Create()
 {
-    Window &window = engine;
-    surface = window.CreateSurface();
+
+}
+
+std::vector<VkSurfaceKHR> Surface::GetFormats()
+{
+    uint32_t count;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
+    std::vector<VkSurfaceFormatKHR> formats;
+    formats.resize(count);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, formats.data());
 }
 
 Surface::~Surface()
 {
     VkInstance &instance = engine;
     vkDestroySurfaceKHR(instance, surface, nullptr);
-}
-
-Surface::operator VkSurfaceKHR&()
-{
-    return surface;
 }
 
 VkSurfaceCapabilitiesKHR Surface::GetCaps()
@@ -42,12 +44,9 @@ VkSurfaceFormatKHR Surface::GetBestFormat()
 {
     VkPhysicalDevice physicalDevice = engine;
     VkSurfaceKHR surface = engine;
-    uint32_t count;
 
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
-    std::vector<VkSurfaceFormatKHR> formats;
-    formats.resize(count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, formats.data());
+
+
 
     for (const auto& p : priorities)
     {

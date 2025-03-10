@@ -1,14 +1,20 @@
 #pragma once
 
+#include <Instance.h>
+#include <PhysicalDevice.h>
+
 #include "vulkan/vulkan.h"
 #include <vector>
+
+#include "EngineLink.h"
 
 class Engine;
 
 class Device
+    : public Instance
+    , public PhysicalDevice
+    , EngineLink
 {
-    Engine& engine;
-
     VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
@@ -23,7 +29,7 @@ class Device
 public:
     operator VkDevice&();
 
-    Device(Engine &engine);
+    Device(Engine *engine);
     ~Device();
 
     uint32_t GetGraphicsIndex() const;

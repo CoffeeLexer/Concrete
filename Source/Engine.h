@@ -12,16 +12,17 @@
 
 class Engine
 {
-    // NOTE: Initialization order is defined by member order
-    Instance        instance;
-    PhysicalDevice  physicalDevice;
-    Window          window;
-    Surface         surface;
-    Device          device;
-    Backbuffer      backbuffer;
-    Pipeline        pipeline;
+    friend class EngineLink;
+
+    Window          *window;
+    Surface         *surface;
+    Device          *device;
+    Backbuffer      *backbuffer;
+    Pipeline        *pipeline;
 
 public:
+    bool GetDevice(const Device &device) const;
+
     operator VkInstance&();
     operator VkPhysicalDevice&();
     operator VkDevice&();

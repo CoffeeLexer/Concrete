@@ -1,7 +1,6 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
-#include "Watcher.h"
 
 class Engine;
 class GLFWwindow;
@@ -28,7 +27,6 @@ public:
     bool IsValid();
 
     VkSurfaceKHR CreateSurface();
-    Watcher<VkExtent2D> BindExtent();
 
     operator GLFWwindow*();
 };

@@ -12,6 +12,7 @@ Engine::Engine()
     , pipeline(Pipeline(*this))
 {
 
+    device = new Device(*this);
 }
 
 Engine::~Engine()
@@ -27,6 +28,13 @@ void Engine::run()
         window.PollEvents();
         window.SwapBuffers();
     }
+}
+
+bool Engine::GetDevice(const Device& device) const
+{
+    if (device == nullptr) return false;
+
+    return *device;
 }
 
 Engine::operator VkInstance&()

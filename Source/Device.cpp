@@ -19,7 +19,7 @@ std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
 std::vector<VkBool32> Device::GetPresentSupportVector()
 {
     uint32_t familyCount;
-    VkPhysicalDevice &physicalDevice = engine;
+    VkPhysicalDevice &physicalDevice = PhysicalDevice::handle;
     VkSurfaceKHR &surface = engine;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
     std::vector<VkBool32> supportArray;
@@ -34,8 +34,8 @@ std::vector<VkBool32> Device::GetPresentSupportVector()
     return supportArray;
 }
 
-Device::Device(Engine &engine)
-    : engine(engine)
+Device::Device(Engine *engine)
+    : EngineLink(engine)
 {
     VkPhysicalDevice &physicalDevice = engine;
 

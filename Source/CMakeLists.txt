@@ -46,6 +46,10 @@ set(SOURCES
     RenderPass.cpp
     Pipeline.cpp
     UI.cpp
+        EngineLink.cpp
+        EngineLink.h
+        Handle.cpp
+        Handle.h
 )
 
 add_executable(${APP_NAME}

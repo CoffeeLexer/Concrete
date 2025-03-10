@@ -5,24 +5,22 @@
 
 #include "Engine.h"
 
-PhysicalDevice::PhysicalDevice(Engine& engine, VkPhysicalDevice physicalDevice)
-    : engine(engine)
-    , physicalDevice(physicalDevice)
+void PhysicalDevice::Create(VkInstance instance)
 {
-
+    handle = FindBest(instance);
 }
 
 VkPhysicalDeviceProperties PhysicalDevice::Properties() const
 {
     VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+    vkGetPhysicalDeviceProperties(handle, &properties);
     return properties;
 }
 
 VkPhysicalDeviceFeatures PhysicalDevice::Features() const
 {
     VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+    vkGetPhysicalDeviceFeatures(handle, &features);
     return features;
 }
 
@@ -48,14 +46,8 @@ uint32_t PhysicalDevice::Rating() const
     return limit;
 }
 
-PhysicalDevice::operator VkPhysicalDevice&()
+VkPhysicalDevice PhysicalDevice::FindBest(VkInstance instance)
 {
-    return physicalDevice;
-}
-
-PhysicalDevice PhysicalDevice::FindBest(Engine& engine)
-{
-    const VkInstance &instance = engine;
     uint32_t count;
     std::vector<VkPhysicalDevice> devices;
 
@@ -64,17 +56,20 @@ PhysicalDevice PhysicalDevice::FindBest(Engine& engine)
 
     vkEnumeratePhysicalDevices(instance, &count, devices.data());
 
-    std::pair<uint32_t, uint32_t> best = {
+    std::pair best = {
         std::numeric_limits<uint32_t>::min(),
         std::numeric_limits<uint32_t>::max(),
     };
     for (uint32_t i = 0; i < count; i++)
     {
-        auto device = PhysicalDevice(engine, devices[i]);
+        auto device = PhysicalDevice();
+        device.handle = devices[i];
+
         if (best.first < device.Rating())
             best = { device.Rating(), i };
     }
 
-    return {engine, devices[best.second]};
+    return devices[best.second];
 }
+
 
