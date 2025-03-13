@@ -2,8 +2,8 @@
 
 #include "Engine.h"
 
-Image::Image(Engine &engine, VkExtent3D extent)
-    : engine(engine)
+Image::Image(Engine *engine, VkExtent3D extent)
+    : Link(engine)
 {
     VkImageCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -23,7 +23,8 @@ Image::Image(Engine &engine, VkExtent3D extent)
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
+    VkImage &image = Handle<VkImage>::handle;
     vkCreateImage(device, &ci, nullptr, &image);
     CreateMemory();
     CreateView();
@@ -31,8 +32,9 @@ Image::Image(Engine &engine, VkExtent3D extent)
 
 void Image::CreateMemory()
 {
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
     VkMemoryRequirements requirements;
+    VkImage &image = Handle<VkImage>::handle;
     vkGetImageMemoryRequirements(device, image, &requirements);
 
     VkMemoryAllocateInfo allocInfo = {
@@ -42,6 +44,7 @@ void Image::CreateMemory()
         .memoryTypeIndex = 0,
     };
 
+    VkDeviceMemory &memory = Handle<VkDeviceMemory>::handle;
     vkAllocateMemory(device, &allocInfo, nullptr, &memory);
     vkBindImageMemory(device, image, memory, 0);
 }
@@ -65,13 +68,14 @@ void Image::CreateView()
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .image = image,
+        .image = Handle<VkImage>::handle,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format = VK_FORMAT_D16_UNORM,
         .components = colorMapping,
         .subresourceRange = subresource,
     };
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
+    VkImageView &view = Handle<VkImageView>::handle;
     vkCreateImageView(device, &ci, nullptr, &view);
 }

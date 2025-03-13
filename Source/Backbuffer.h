@@ -2,26 +2,25 @@
 
 #include "vulkan/vulkan.h"
 
+#include "Handle.h"
+#include "Link.h"
 #include "RenderPass.h"
-#include "UI.h"
 
 #include <vector>
 
 class Engine;
 
 class Backbuffer
+    : public Handle<VkSwapchainKHR>
+    , public Link<Engine>
 {
-    Engine &engine;
-
     RenderPass *renderPass;
 
-    VkSwapchainKHR swapchain;
     VkFormat format;
     VkExtent2D extent;
     VkCommandPool commandPool;
     uint32_t imageCount;
     uint32_t currentImage;
-    UI ui;
 
     std::vector<VkImageView> imageViews;
     std::vector<VkImage> images;
@@ -41,18 +40,16 @@ class Backbuffer
     void AllocateCommandPool();
 
 public:
-    Backbuffer(Engine& engine);
+    explicit Backbuffer(Engine* engine);
     ~Backbuffer();
     VkFormat GetFormat();
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();
     VkFramebuffer GetFramebuffer(uint32_t i);
     VkImageView GetView(uint32_t i);
-    operator VkSwapchainKHR&();
-    operator VkExtent2D&();
 
     void GetFramebuffer();
-
+    VkExtent2D GetExtent();
     void Draw();
     uint32_t GetIndex();
 };

@@ -45,11 +45,10 @@ set(SOURCES
     PipelineLayout.cpp
     RenderPass.cpp
     Pipeline.cpp
-    UI.cpp
-        EngineLink.cpp
-        EngineLink.h
-        Handle.cpp
-        Handle.h
+    Handle.cpp
+    Handle.h
+    Panic.h
+    Panic.cpp
 )
 
 add_executable(${APP_NAME}

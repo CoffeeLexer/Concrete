@@ -1,32 +1,19 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
+#include "Handle.h"
+#include "Link.h"
 
 class Engine;
 class GLFWwindow;
 
-struct WindowUserData
-{
-    VkExtent2D extent;
-    WindowUserData();
-    void SetFramebufferSize(int width, int height);
-};
-
 class Window
+    : public Handle<GLFWwindow*>
+    , public Link<Engine>
 {
-    Engine &engine;
-    GLFWwindow *window;
-    WindowUserData userData;
 public:
-
-    Window(Engine &engine);
+    explicit Window(Engine *engine);
     ~Window();
 
-    void SwapBuffers();
-    void PollEvents();
-    bool IsValid();
-
-    VkSurfaceKHR CreateSurface();
-
-    operator GLFWwindow*();
+    static void PollEvents();
+    [[nodiscard]] bool IsValid() const;
 };

@@ -2,8 +2,8 @@
 #include <stdexcept>
 #include "Engine.h"
 
-DescriptorSetLayout::DescriptorSetLayout(Engine &engine)
-    : engine(engine)
+DescriptorSetLayout::DescriptorSetLayout(Engine *engine)
+    : Link(engine)
 {
     VkDescriptorSetLayoutBinding binding = {
         .binding = 0,
@@ -21,10 +21,10 @@ DescriptorSetLayout::DescriptorSetLayout(Engine &engine)
         .pBindings = &binding, // layout (binding=X)
     };
 
-    VkDevice device = engine;
-    VkResult result = vkCreateDescriptorSetLayout(device, &ci, nullptr, &setLayout);
+    VkDevice device = Owner().device;
+    VkResult result = vkCreateDescriptorSetLayout(device, &ci, nullptr, &handle);
     if (result != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed Init DescriptorSet");
+        panic("Failed Init DescriptorSet");
     }
 }

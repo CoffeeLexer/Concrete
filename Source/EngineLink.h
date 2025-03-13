@@ -8,7 +8,7 @@ class EngineLink
 {
     Engine *engine;
 
-    Engine& deref() const
+    [[nodiscard]] Engine& deref() const
     {
         if (engine == nullptr)
             throw std::runtime_error("EngineLink::Deref getting NULL pointer");
@@ -19,21 +19,21 @@ public:
     explicit EngineLink(Engine *engine)
         : engine(engine)
     {}
-    const Device& Device()
+    [[nodiscard]] const Device& Device() const
     {
         const auto& device = deref().device;
         if (device == nullptr)
             throw std::runtime_error("EngineLink::Device is NULL");
         return *device;
     }
-    const Window& Window()
+    [[nodiscard]] const Window& Window() const
     {
         const auto& window = deref().window;
         if (window == nullptr)
             throw std::runtime_error("EngineLink::Window is NULL");
         return *window;
     }
-    const Backbuffer& Backbuffer()
+    [[nodiscard]] const Backbuffer& Backbuffer() const
     {
         const auto& backbuffer = deref().backbuffer;
         if (backbuffer == nullptr)

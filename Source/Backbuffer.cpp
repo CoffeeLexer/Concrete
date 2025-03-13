@@ -10,8 +10,8 @@
 VkPresentModeKHR Backbuffer::GetBestPresentMode()
 {
     uint32_t count;
-    const VkSurfaceKHR &surface = engine;
-    const VkPhysicalDevice &physicalDevice = engine;
+    const VkSurfaceKHR surface = Owner().surface;
+    const VkPhysicalDevice physicalDevice = Owner().physicalDevice;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
     std::vector<VkPresentModeKHR> modes = {};
     modes.resize(count);
@@ -40,13 +40,12 @@ VkFormat Backbuffer::GetFormat()
     return this->format;
 }
 
-Backbuffer::Backbuffer(Engine &engine)
-    : engine(engine)
+Backbuffer::Backbuffer(Engine *engine)
+    : Link(engine)
     , currentImage(0)
-    , ui(engine)
 {
     VkPresentModeKHR presentMode = GetBestPresentMode();
-    Surface &surface = engine;
+    Surface &surface = Owner().surface;
     const auto caps = surface.GetCaps();
     VkSurfaceFormatKHR format = surface.GetBestFormat();
     this->format = format.format;
@@ -79,7 +78,7 @@ Backbuffer::Backbuffer(Engine &engine)
     ci.compositeAlpha = static_cast<VkCompositeAlphaFlagBitsKHR>(
         caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
     
-    Device &deviceWrapper = engine;
+    Device &deviceWrapper = Owner().device;
     uint32_t graphicsIndex = deviceWrapper.GetGraphicsIndex();
     uint32_t presentIndex = deviceWrapper.GetPresentIndex();
     uint32_t queueIndices[] = {graphicsIndex, presentIndex};
@@ -108,7 +107,7 @@ Backbuffer::Backbuffer(Engine &engine)
     images.resize(imageCount);
     vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
 
-    renderPass = new RenderPass(engine);
+    renderPass = new RenderPass(owner);
 
     CreateImageViews();
     CreateFramebuffers();
@@ -119,7 +118,7 @@ Backbuffer::Backbuffer(Engine &engine)
 
 Backbuffer::~Backbuffer()
 {
-    VkDevice device = engine;
+    VkDevice device = Owner().device;
     delete renderPass;
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
@@ -128,7 +127,7 @@ void Backbuffer::CreateImageViews()
 {
     imageViews.resize(imageCount);
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
 
     for (uint32_t i = 0; i < imageViews.size(); i++)
     {
@@ -166,7 +165,7 @@ void Backbuffer::CreateFences()
 {
     renderFences.resize(imageCount);
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
     VkFenceCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .pNext = nullptr,
@@ -187,7 +186,7 @@ void Backbuffer::CreateFramebuffers()
 {
     framebuffers.resize(imageCount);
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
     for (uint32_t i = 0; i < imageCount; i++)
     {
         VkImageView attachments[] = {
@@ -224,7 +223,7 @@ void Backbuffer::AllocateCommandPool()
         .queueFamilyIndex = 0,
     };
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
     vkCreateCommandPool(device, &pool_ci, nullptr, &commandPool);
 
     VkCommandBufferAllocateInfo ai = {
@@ -242,7 +241,7 @@ void Backbuffer::AllocateCommandPool()
 void Backbuffer::Draw()
 {
     // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    Device &device = engine;
+    Device &device = Owner().device;
     VkFramebuffer &framebuffer = framebuffers[currentImage];
     VkFence &fence = renderFences[currentImage];
     vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
@@ -270,9 +269,9 @@ void Backbuffer::Draw()
         },
     };
 
-    ui.Start();
-    ImGui::ShowDemoWindow();
-    ui.End(commandBuffer, extent);
+    // ui.Start();
+    // ImGui::ShowDemoWindow();
+    // ui.End(commandBuffer, extent);
 
     VkRect2D renderArea = {
         .offset = VkOffset2D {0, 0},
@@ -355,7 +354,7 @@ void Backbuffer::Draw()
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = renderSemaphore,
         .swapchainCount = 1,
-        .pSwapchains = &swapchain,
+        .pSwapchains = &handle,
         .pImageIndices = &imageIndex,
         .pResults = nullptr,
     };
@@ -396,7 +395,7 @@ void Backbuffer::CreateSemaphores()
     };
 
     VkResult status = VK_SUCCESS;
-    VkDevice device = engine;
+    VkDevice device = Owner().device;
     for (uint32_t i = 0; i < imageCount; i++)
     {
         status = vkCreateSemaphore(device, &ci, nullptr, &renderSemaphores[i]);
@@ -417,12 +416,7 @@ VkImageView Backbuffer::GetView(uint32_t i)
     return imageViews[i];
 }
 
-Backbuffer::operator VkSwapchainKHR&()
-{
-    return swapchain;
-}
-
-Backbuffer::operator VkExtent2D&()
+VkExtent2D Backbuffer::GetExtent()
 {
     return extent;
 }

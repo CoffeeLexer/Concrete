@@ -1,16 +1,17 @@
 #pragma once
 
 #include "Handle.h"
+#include "Link.h"
 #include "vulkan/vulkan.h"
 
-class PhysicalDevice : public Handle<VkPhysicalDevice>
+class Engine;
+
+class PhysicalDevice
+    : public Handle<VkPhysicalDevice>
+    , public Link<Engine>
 {
-    [[nodiscard]] uint32_t Rating() const;
     [[nodiscard]] VkPhysicalDeviceFeatures Features() const;
     [[nodiscard]] VkPhysicalDeviceProperties Properties() const;
-    [[nodiscard]] static VkPhysicalDevice FindBest(VkInstance instance);
-
-protected:
-    PhysicalDevice() = default;
-    void Create(VkInstance instance);
+public:
+    explicit PhysicalDevice(Engine *engine);
 };

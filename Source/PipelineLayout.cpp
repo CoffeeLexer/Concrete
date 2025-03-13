@@ -15,7 +15,7 @@ PipelineLayout::PipelineLayout(Engine &engine)
         .pPushConstantRanges = nullptr,
     };
 
-    VkDevice device = engine;
+    VkDevice device = Owne;
     VkResult result = vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout);
     if (result != VK_SUCCESS)
     {

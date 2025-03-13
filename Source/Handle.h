@@ -1,20 +1,20 @@
 #pragma once
-#include <stdexcept>
-#include <vulkan/vulkan_core.h>
+#include "Panic.h"
 
 template<typename T>
-class Handle {
+class Handle
+{
 protected:
-    T handle = VK_NULL_HANDLE;
-
-    Handle() = default;
-
+    T handle;
 public:
-    explicit operator T&()
+    Handle()
     {
-        if (handle == VK_NULL_HANDLE)
-            throw std::runtime_error("Handle is NULL");
+        handle = nullptr;
+    }
+    operator T()
+    {
+        if (handle == nullptr)
+            panic("handle is null");
         return handle;
     }
 };
-

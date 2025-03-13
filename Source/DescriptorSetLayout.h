@@ -1,13 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-
+#include "Handle.h"
+#include "Link.h"
 class Engine;
 
 class DescriptorSetLayout
+    : public Handle<VkDescriptorSetLayout>
+    , public Link<Engine>
 {
-    Engine &engine;
-    VkDescriptorSetLayout setLayout;
 public:
-    DescriptorSetLayout(Engine &engine);
+    DescriptorSetLayout(Engine *engine);
 };

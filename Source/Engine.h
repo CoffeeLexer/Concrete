@@ -12,28 +12,16 @@
 
 class Engine
 {
-    friend class EngineLink;
-
-    Window          *window;
-    Surface         *surface;
-    Device          *device;
-    Backbuffer      *backbuffer;
-    Pipeline        *pipeline;
-
 public:
-    bool GetDevice(const Device &device) const;
+    Window     window;
+    Surface    surface;
+    Instance   instance;
+    PhysicalDevice physicalDevice;
+    Device     device;
+    Backbuffer backbuffer;
+    Pipeline   pipeline;
 
-    operator VkInstance&();
-    operator VkPhysicalDevice&();
-    operator VkDevice&();
-    operator Device&();
-    operator Pipeline&();
-    operator VkSurfaceKHR&();
-    operator Surface&();
-    operator Window&();
-    operator Backbuffer&();
-
-    Engine();
+    explicit Engine();
     ~Engine();
     void run();
 };

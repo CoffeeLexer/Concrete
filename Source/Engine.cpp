@@ -3,74 +3,22 @@
 #include <stdexcept>
 
 Engine::Engine()
-    : instance(Instance(*this))
-    , physicalDevice(PhysicalDevice::FindBest(*this))
-    , window(Window(*this))
-    , surface(Surface(*this))
-    , device(Device(*this))
-    , backbuffer(Backbuffer(*this))
-    , pipeline(Pipeline(*this))
-{
-
-    device = new Device(*this);
-}
-
-Engine::~Engine()
+    : instance(this)
+    , physicalDevice(this)
+    , device(this)
+    , window(this)
+    , surface(this)
+    , backbuffer(this)
+    , pipeline(this)
 {
 }
+Engine::~Engine() = default;
 
 void Engine::run()
 {
     while (window.IsValid())
     {
         backbuffer.Draw();
-
         window.PollEvents();
-        window.SwapBuffers();
     }
 }
-
-bool Engine::GetDevice(const Device& device) const
-{
-    if (device == nullptr) return false;
-
-    return *device;
-}
-
-Engine::operator VkInstance&()
-{
-    return instance;
-}
-Engine::operator VkPhysicalDevice&()
-{
-    return physicalDevice;
-}
-Engine::operator VkDevice&()
-{
-    return device;
-}
-Engine::operator Window&()
-{
-    return window;
-}
-Engine::operator VkSurfaceKHR&()
-{
-    return surface;
-}
-Engine::operator Surface&()
-{
-    return surface;
-}
-Engine::operator Device&()
-{
-    return device;
-}
-Engine::operator Backbuffer&()
-{
-    return backbuffer;
-}
-Engine::operator Pipeline&()
-{
-    return pipeline;
-}
-

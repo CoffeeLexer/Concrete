@@ -87,8 +87,8 @@ Pipeline::Pipeline(Engine &engine)
         .patchControlPoints = 1,
     };
 
-    Backbuffer &backbuffer = engine;
-    VkExtent2D extent = extentWatcher.Current();
+    Backbuffer &backbuffer = Owner().backbuffer;
+    VkExtent2D extent = backbuffer.E
 
     VkViewport viewport = {
         .x = 0.0f,
@@ -187,7 +187,7 @@ Pipeline::Pipeline(Engine &engine)
         .pPushConstantRanges = nullptr,
     };
 
-    VkDevice &device = engine;
+    VkDevice device = Owner().device;
     VkResult result = vkCreatePipelineLayout(device, &layout_ci, nullptr, &pipelineLayout);
     if(result != VK_SUCCESS)
     {
@@ -231,12 +231,7 @@ Pipeline::Pipeline(Engine &engine)
 Pipeline::~Pipeline()
 {
     // FIXME: implement this
-    VkDevice &device = engine;
-    vkDestroyPipeline(device, pipeline, nullptr);
+    VkDevice &device = Owner().device;
+    vkDestroyPipeline(device, handle, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-}
-
-Pipeline::operator VkPipeline&()
-{
-    return pipeline;
 }

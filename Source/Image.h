@@ -1,18 +1,19 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include "Handle.h"
+#include "Link.h"
 
 class Engine;
 
 class Image
+    : public Handle<VkImage>
+    , public Handle<VkDeviceMemory>
+    , public Handle<VkImageView>
+    , public Link<Engine>
 {
-    Engine &engine;
-    VkImage image;
-    VkDeviceMemory memory;
-    VkImageView view;
-
     void CreateView();
     void CreateMemory();
 public:
-    Image(Engine &engine, VkExtent3D extent);
+    explicit Image(Engine *engine, VkExtent3D extent);
 };

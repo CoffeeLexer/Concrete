@@ -5,29 +5,34 @@
 
 #include "Engine.h"
 
-void PhysicalDevice::Create(VkInstance instance)
+static VkPhysicalDeviceProperties StaticProperties(const VkPhysicalDevice device)
 {
-    handle = FindBest(instance);
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(device, &properties);
+    return properties;
 }
 
 VkPhysicalDeviceProperties PhysicalDevice::Properties() const
 {
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(handle, &properties);
-    return properties;
+    return StaticProperties(handle);
+}
+
+static VkPhysicalDeviceFeatures StaticFeatures(const VkPhysicalDevice device)
+{
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(device, &features);
+    return features;
 }
 
 VkPhysicalDeviceFeatures PhysicalDevice::Features() const
 {
-    VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(handle, &features);
-    return features;
+    return StaticFeatures(handle);
 }
 
-uint32_t PhysicalDevice::Rating() const
+uint32_t Rating(VkPhysicalDevice physicalDevice)
 {
-    const auto& features = Features();
-    const auto& properties = Properties();
+    const auto& features = StaticFeatures(physicalDevice);
+    const auto& properties = StaticProperties(physicalDevice);
     auto limit = std::numeric_limits<uint32_t>::max();
 
     switch(properties.deviceType)
@@ -46,14 +51,15 @@ uint32_t PhysicalDevice::Rating() const
     return limit;
 }
 
-VkPhysicalDevice PhysicalDevice::FindBest(VkInstance instance)
+PhysicalDevice::PhysicalDevice(Engine *engine)
+    : Link(engine)
 {
+    VkInstance instance = Owner().instance;
     uint32_t count;
     std::vector<VkPhysicalDevice> devices;
 
     vkEnumeratePhysicalDevices(instance, &count, nullptr);
     devices.resize(count);
-
     vkEnumeratePhysicalDevices(instance, &count, devices.data());
 
     std::pair best = {
@@ -62,14 +68,11 @@ VkPhysicalDevice PhysicalDevice::FindBest(VkInstance instance)
     };
     for (uint32_t i = 0; i < count; i++)
     {
-        auto device = PhysicalDevice();
-        device.handle = devices[i];
+        uint32_t rating = Rating(devices[i]);
 
-        if (best.first < device.Rating())
-            best = { device.Rating(), i };
+        if (best.first < rating)
+            best = { rating, i };
     }
 
-    return devices[best.second];
+    handle = devices[best.second];
 }
-
-

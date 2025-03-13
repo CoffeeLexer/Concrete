@@ -1,22 +1,19 @@
 #pragma once
 #include "vulkan/vulkan.h"
-#include "Watcher.h"
 #include <vector>
+#include "Handle.h"
+#include "Link.h"
 
 class Engine;
 
 class Pipeline
+    : public Handle<VkPipeline>
+    , public Link<Engine>
 {
-    Engine& engine;
     VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
-    Watcher<VkExtent2D> extentWatcher;
 
-    void CreateRenderPass();
     VkShaderModule CreateShaderModule(std::vector<uint32_t> code);
 public:
-    Pipeline(Engine& engine);
+    explicit Pipeline(Engine* engine);
     ~Pipeline();
-
-    operator VkPipeline&();
 };

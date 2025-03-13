@@ -1,16 +1,16 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
+#include "Handle.h"
+#include "Link.h"
 
 class Engine;
 
 class RenderPass
+    : public Handle<VkRenderPass>
+    , public Link<Engine>
 {
-    Engine &engine;
-    VkRenderPass renderPass;
-
 public:
-    RenderPass(Engine &engine);
+    explicit RenderPass(Engine *engine);
     ~RenderPass();
-    operator VkRenderPass();
 };

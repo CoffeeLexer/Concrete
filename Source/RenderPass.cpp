@@ -1,13 +1,12 @@
 #include "RenderPass.h"
 
 #include "Engine.h"
+#include "Panic.h"
 
-#include <stdexcept>
-
-RenderPass::RenderPass(Engine& engine)
-    : engine(engine)
+RenderPass::RenderPass(Engine* engine)
+    : Link(engine)
 {
-    Backbuffer &backbuffer = engine;
+    Backbuffer backbuffer = Owner().backbuffer;
     VkFormat format = backbuffer.GetFormat();
 
     VkAttachmentDescription attachment = {
@@ -52,21 +51,16 @@ RenderPass::RenderPass(Engine& engine)
         .pDependencies = nullptr,
     };
 
-    VkDevice &device = engine;
-    VkResult status = vkCreateRenderPass(device, &ci, nullptr, &renderPass);
+    VkDevice device = Owner().device;
+    VkResult status = vkCreateRenderPass(device, &ci, nullptr, &handle);
     if (status != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed render pass create");
+        panic("Failed render pass create");
     }
 }
 
 RenderPass::~RenderPass()
 {
-    VkDevice &device = engine;
-    vkDestroyRenderPass(device, renderPass, nullptr);
-}
-
-RenderPass::operator VkRenderPass()
-{
-    return renderPass;
+    VkDevice device = Owner().device;
+    vkDestroyRenderPass(device, handle, nullptr);
 }

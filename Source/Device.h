@@ -1,21 +1,17 @@
 #pragma once
 
-#include <Instance.h>
-#include <PhysicalDevice.h>
-
 #include "vulkan/vulkan.h"
 #include <vector>
 
-#include "EngineLink.h"
+#include "Handle.h"
+#include "Link.h"
 
 class Engine;
 
 class Device
-    : public Instance
-    , public PhysicalDevice
-    , EngineLink
+    : public Handle<VkDevice>
+    , public Link<Engine>
 {
-    VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
     uint32_t graphicsIndex;
@@ -25,16 +21,13 @@ class Device
 
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties();
     std::tuple<uint32_t, uint32_t> PickQueueFamily();
-    std::vector<const char*> GetExtensions();
 public:
-    operator VkDevice&();
-
-    Device(Engine *engine);
+    explicit Device(Engine *engine);
     ~Device();
 
-    uint32_t GetGraphicsIndex() const;
-    uint32_t GetPresentIndex() const;
+    [[nodiscard]] uint32_t GetGraphicsIndex() const;
+    [[nodiscard]] uint32_t GetPresentIndex() const;
 
-    VkQueue GetGraphicsQueue() const;
-    VkQueue GetPresentQueue() const;
+    [[nodiscard]] VkQueue GetGraphicsQueue() const;
+    [[nodiscard]] VkQueue GetPresentQueue() const;
 };

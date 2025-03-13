@@ -1,14 +1,20 @@
 #include "Device.h"
-
 #include "Engine.h"
+#include "Panic.h"
 
 #include <vector>
-#include <stdexcept>
+
+std::vector<const char*> GetExtensions()
+{
+    return {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    };
+}
 
 std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
 {
     uint32_t familyCount;
-    VkPhysicalDevice &physicalDevice = engine;
+    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
     std::vector<VkQueueFamilyProperties> properties;
     properties.resize(familyCount);
@@ -19,8 +25,8 @@ std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
 std::vector<VkBool32> Device::GetPresentSupportVector()
 {
     uint32_t familyCount;
-    VkPhysicalDevice &physicalDevice = PhysicalDevice::handle;
-    VkSurfaceKHR &surface = engine;
+    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
+    VkSurfaceKHR surface = Owner().surface;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
     std::vector<VkBool32> supportArray;
     supportArray.resize(familyCount);
@@ -35,9 +41,10 @@ std::vector<VkBool32> Device::GetPresentSupportVector()
 }
 
 Device::Device(Engine *engine)
-    : EngineLink(engine)
+    : Link(engine)
 {
-    VkPhysicalDevice &physicalDevice = engine;
+    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
+    VkDevice device = Owner().device;
 
     float priorities[] = {1.0f, 1.0f};
     const auto & [presentFamily, graphicsFamily] = PickQueueFamily();
@@ -95,24 +102,19 @@ Device::Device(Engine *engine)
 
     VkResult result = vkCreateDevice(physicalDevice, &ci, nullptr, &device);
     if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed device create");
-    }
+        panic("Failed Device Creation");
+
     vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
     vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
 }
 
 Device::~Device()
 {
+    VkDevice device = Owner().device;
     vkDestroyDevice(device, nullptr);
 }
 
-std::vector<const char*> Device::GetExtensions()
-{
-    return (std::vector<const char*>) {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    };
-}
+
 
 std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
 {
@@ -142,7 +144,7 @@ std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
     }
 
     if (graphicsQueue == UINT32_MAX)
-        throw std::runtime_error("No queue graphics family");
+        panic("No queue graphics family");
 
     uint32_t presentQueue = UINT32_MAX;
     for (uint32_t i = 0; i < presentSupport.size(); i++)
@@ -155,14 +157,9 @@ std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
     }
 
     if (presentQueue == UINT32_MAX)
-        throw std::runtime_error("No queue present family");
+        panic("No queue present family");
 
     return {presentQueue, graphicsQueue};
-}
-
-Device::operator VkDevice&()
-{
-    return device;
 }
 
 uint32_t Device::GetGraphicsIndex() const

@@ -2,39 +2,45 @@
 
 #include "Instance.h"
 #include "Engine.h"
+#include <GLFW/glfw3.h>
 
-namespace
+constexpr VkFormat priorities[] = {
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_SRGB,
+};
+
+Surface::Surface(Engine *engine)
+    : Link(engine)
 {
-    const VkFormat priorities[] = {
-        VK_FORMAT_R8G8B8A8_UNORM,
-        VK_FORMAT_R8G8B8A8_SRGB,
-    };
+    VkInstance instance = Owner().instance;
+    GLFWwindow *window = Owner().window;
+    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &handle);
+    if (result != VK_SUCCESS)
+        panic("Couldn't create surface");
 }
 
-void Surface::Create()
-{
 
-}
-
-std::vector<VkSurfaceKHR> Surface::GetFormats()
+std::vector<VkSurfaceFormatKHR> Surface::GetFormats()
 {
+    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
     uint32_t count;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, handle, &count, nullptr);
     std::vector<VkSurfaceFormatKHR> formats;
     formats.resize(count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, formats.data());
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, handle, &count, formats.data());
+    return formats;
 }
 
 Surface::~Surface()
 {
-    VkInstance &instance = engine;
-    vkDestroySurfaceKHR(instance, surface, nullptr);
+    VkInstance instance = Owner().instance;
+    vkDestroySurfaceKHR(instance, handle, nullptr);
 }
 
 VkSurfaceCapabilitiesKHR Surface::GetCaps()
 {
-    VkPhysicalDevice physicalDevice = engine;
-    VkSurfaceKHR surface = engine;
+    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
+    VkSurfaceKHR surface = Owner().surface;
     VkSurfaceCapabilitiesKHR caps;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &caps);
     return caps; 
@@ -42,18 +48,15 @@ VkSurfaceCapabilitiesKHR Surface::GetCaps()
 
 VkSurfaceFormatKHR Surface::GetBestFormat()
 {
-    VkPhysicalDevice physicalDevice = engine;
-    VkSurfaceKHR surface = engine;
-
-
-
+    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
+    auto formats = GetFormats();
 
     for (const auto& p : priorities)
     {
-        for (uint32_t i = 0; i < count; i++)
+        for (const auto& format : formats)
         {
-            if (p == formats.at(i).format)
-                return formats.at(i);
+            if (p == format.format)
+                return format;
         }
     }
     return formats.at(0);

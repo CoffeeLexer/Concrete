@@ -1,13 +1,15 @@
 #pragma once
 #include "Handle.h"
+#include "Link.h"
 #include "vulkan/vulkan.h"
 
 class Engine;
 
-class Instance : public Handle<VkInstance>
+class Instance
+    : public Handle<VkInstance>
+    , public Link<Engine>
 {
-protected:
-    Instance() = default;
-    void Create();
+public:
+    Instance(Engine *engine);
     ~Instance();
 };
