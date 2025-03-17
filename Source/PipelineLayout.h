@@ -7,11 +7,9 @@
 class Engine;
 
 class PipelineLayout
-    : public Handle<VkDevice>
+    : public Handle<VkPipelineLayout>
     , public Link<Engine>
 {
-    VkPipelineLayout pipelineLayout;
-    Engine &engine;
 public:
     explicit PipelineLayout(Engine *engine);
     ~PipelineLayout(); 

@@ -47,7 +47,6 @@ set(SOURCES
     Pipeline.cpp
     Handle.cpp
     Handle.h
-    Panic.h
     Panic.cpp
 )
 

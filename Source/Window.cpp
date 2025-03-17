@@ -10,21 +10,47 @@
 
 uint32_t globalInstanceCount = 0;
 
-void CallbackError(int err, const char* description)
+class UserData
 {
-    fprintf(stderr, "Error: %s\n", description);
+    VkExtent2D frameBuffer;
+public:
+    void SetFrameBufferSize(int width, int height)
+    {
+        frameBuffer = {
+            .width = static_cast<uint32_t>(width),
+            .height = static_cast<uint32_t>(height),
+        };
+    }
+};
+
+namespace Callback
+{
+    void Error(int err, const char* description);
+    void Key(GLFWwindow* window, int key, int scancode, int action, int mods);
+    void FramebufferSize(GLFWwindow *window, int width, int height);
 }
 
-void CallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods)
+UserData& GetUserData(GLFWwindow *window)
+{
+    auto *ptr = glfwGetWindowUserPointer(window);
+    return *static_cast<UserData*>(ptr);
+}
+
+void Callback::Error(int err, const char* description)
+{
+    fprintf(stderr, "GLFW Error: %s\n", description);
+}
+
+void Callback::Key(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-void CallbackFramebufferSize(GLFWwindow *window, int width, int height)
+void Callback::FramebufferSize(GLFWwindow *window, int width, int height)
 {
-    auto &userData = GetUserDataRef(window);
-    userData.SetFramebufferSize(width, height);
+    auto &userData = GetUserData(window);
+    userData.SetFrameBufferSize(width, height);
 }
 
 void GlobalInit()
@@ -33,12 +59,9 @@ void GlobalInit()
     if (globalInstanceCount > 1) return;
 
     if (!glfwInit())
-    {
-        printf("Failed GLFW INIT");
-        exit(1);
-    }
+        panic("Failed GLFW INIT");
 
-    glfwSetErrorCallback(CallbackError);
+    glfwSetErrorCallback(Callback::Error);
 }
 
 void GlobalTerminate()
@@ -63,14 +86,12 @@ Window::Window(Engine *engine)
     handle = glfwCreateWindow(480, 480, "Concrete Window", nullptr, nullptr);
 
     if (!handle)
-    {
-        fprintf(stderr, "Failed GLFWwindow creation\n");
-        exit(1);
-    }
+        panic("Failed GLFWwindow creation");
 
-    // glfwSetWindowUserPointer(handle, &userData);
-    glfwSetKeyCallback(handle, CallbackKey);
-    glfwSetFramebufferSizeCallback(handle, CallbackFramebufferSize);
+    userData = new UserData;
+    glfwSetWindowUserPointer(handle, userData);
+    glfwSetKeyCallback(handle, Callback::Key);
+    glfwSetFramebufferSizeCallback(handle, Callback::FramebufferSize);
 }
 
 Window::~Window()

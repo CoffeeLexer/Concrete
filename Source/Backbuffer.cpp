@@ -97,15 +97,15 @@ Backbuffer::Backbuffer(Engine *engine)
     }
 
     VkDevice device = deviceWrapper;
-    VkResult result = vkCreateSwapchainKHR(device, &ci, nullptr, &swapchain);
+    VkResult result = vkCreateSwapchainKHR(device, &ci, nullptr, &handle);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed creating swapchain");
     }
 
-    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device, handle, &imageCount, nullptr);
     images.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
+    vkGetSwapchainImagesKHR(device, handle, &imageCount, images.data());
 
     renderPass = new RenderPass(owner);
 
@@ -120,7 +120,7 @@ Backbuffer::~Backbuffer()
 {
     VkDevice device = Owner().device;
     delete renderPass;
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    vkDestroySwapchainKHR(device, handle, nullptr);
 }
 
 void Backbuffer::CreateImageViews()
@@ -257,7 +257,7 @@ void Backbuffer::Draw()
     };
 
     uint32_t imageIndex;
-    VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+    VkResult status = vkAcquireNextImageKHR(device, handle, UINT64_MAX,
         imageSemaphores[currentImage], nullptr, &imageIndex);
 
     vkResetFences(device, 1, &fence);
@@ -288,7 +288,7 @@ void Backbuffer::Draw()
         .pClearValues = &clearValue,
     };
 
-    Pipeline &pipeline = engine;
+    Pipeline pipeline = Owner().pipeline;
     vkCmdBeginRenderPass(commandBuffer, &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 

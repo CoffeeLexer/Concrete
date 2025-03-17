@@ -24,7 +24,7 @@ VkShaderModule Pipeline::CreateShaderModule(std::vector<uint32_t> code)
         .pCode = code.data(),
     };
 
-    VkDevice device = engine;
+    VkDevice device = Owner().device;
     VkShaderModule module;
     VkResult result = vkCreateShaderModule(device, &ci, nullptr, &module);
     if (result != VK_SUCCESS)
@@ -34,9 +34,8 @@ VkShaderModule Pipeline::CreateShaderModule(std::vector<uint32_t> code)
     return module;
 }
 
-Pipeline::Pipeline(Engine &engine)
-    : engine(engine)
-    , extentWatcher(static_cast<Window&>(engine).BindExtent())
+Pipeline::Pipeline(Engine *engine)
+    : Link(engine)
 {
     auto vertModule = CreateShaderModule(triangle_vert_code);
     auto fragModule = CreateShaderModule(triangle_frag_code);
@@ -88,7 +87,7 @@ Pipeline::Pipeline(Engine &engine)
     };
 
     Backbuffer &backbuffer = Owner().backbuffer;
-    VkExtent2D extent = backbuffer.E
+    VkExtent2D extent = backbuffer.GetExtent();
 
     VkViewport viewport = {
         .x = 0.0f,
@@ -218,7 +217,7 @@ Pipeline::Pipeline(Engine &engine)
         .basePipelineIndex = 0,
     };
 
-    result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+    result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &handle);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Pipeline create failed");
@@ -231,7 +230,7 @@ Pipeline::Pipeline(Engine &engine)
 Pipeline::~Pipeline()
 {
     // FIXME: implement this
-    VkDevice &device = Owner().device;
+    VkDevice device = Owner().device;
     vkDestroyPipeline(device, handle, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }

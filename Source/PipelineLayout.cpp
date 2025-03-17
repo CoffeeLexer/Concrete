@@ -2,8 +2,8 @@
 #include <stdexcept>
 #include "Engine.h"
 
-PipelineLayout::PipelineLayout(Engine &engine)
-    : engine(engine)
+PipelineLayout::PipelineLayout(Engine *engine)
+    : Link(engine)
 {
     VkPipelineLayoutCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -15,8 +15,8 @@ PipelineLayout::PipelineLayout(Engine &engine)
         .pPushConstantRanges = nullptr,
     };
 
-    VkDevice device = Owne;
-    VkResult result = vkCreatePipelineLayout(device, &ci, nullptr, &pipelineLayout);
+    VkDevice device = Owner().device;
+    VkResult result = vkCreatePipelineLayout(device, &ci, nullptr, &handle);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed Creating PipelineLayout");
