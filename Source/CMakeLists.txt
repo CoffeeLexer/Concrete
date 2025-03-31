@@ -48,6 +48,8 @@ set(SOURCES
     Handle.cpp
     Handle.h
     Panic.cpp
+        Ownership.cpp
+        Ownership.h
 )
 
 add_executable(${APP_NAME}

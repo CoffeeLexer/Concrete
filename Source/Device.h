@@ -5,12 +5,13 @@
 
 #include "Handle.h"
 #include "Link.h"
+#include "Ownership.h"
 
 class Engine;
 
 class Device
     : public Handle<VkDevice>
-    , public Link<Engine>
+    , public virtual Owned
 {
     VkQueue graphicsQueue;
     VkQueue presentQueue;
@@ -22,8 +23,11 @@ class Device
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties();
     std::tuple<uint32_t, uint32_t> PickQueueFamily();
 public:
-    explicit Device(Engine *engine);
-    ~Device();
+    explicit Device() = default;
+    ~Device() = default;
+
+    void Create();
+    void Destroy();
 
     [[nodiscard]] uint32_t GetGraphicsIndex() const;
     [[nodiscard]] uint32_t GetPresentIndex() const;

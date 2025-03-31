@@ -1,7 +1,6 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
-
+#include "Ownership.h"
 #include "Instance.h"
 #include "PhysicalDevice.h"
 #include "Device.h"
@@ -13,13 +12,13 @@
 class Engine
 {
 public:
-    Window     window;
-    Surface    surface;
-    Instance   instance;
-    PhysicalDevice physicalDevice;
-    Device     device;
-    Backbuffer backbuffer;
-    Pipeline   pipeline;
+    Handler<Window>         window;
+    Handler<Surface>        surface;
+    Handler<Instance>       instance;
+    Handler<PhysicalDevice> physicalDevice;
+    Handler<Device>         device;
+    Handler<Backbuffer>     backbuffer;
+    Handler<Pipeline>       pipeline;
 
     explicit Engine();
     ~Engine();

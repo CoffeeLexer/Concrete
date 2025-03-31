@@ -40,8 +40,7 @@ std::vector<VkBool32> Device::GetPresentSupportVector()
     return supportArray;
 }
 
-Device::Device(Engine *engine)
-    : Link(engine)
+void Device::Create()
 {
     VkPhysicalDevice physicalDevice = Owner().physicalDevice;
     VkDevice device = Owner().device;
@@ -108,13 +107,11 @@ Device::Device(Engine *engine)
     vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
 }
 
-Device::~Device()
+void Device::Destroy()
 {
     VkDevice device = Owner().device;
     vkDestroyDevice(device, nullptr);
 }
-
-
 
 std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
 {

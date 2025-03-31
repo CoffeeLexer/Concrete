@@ -10,25 +10,20 @@
 
 uint32_t globalInstanceCount = 0;
 
-class UserData
-{
-    VkExtent2D frameBuffer;
-public:
-    void SetFrameBufferSize(int width, int height)
-    {
-        frameBuffer = {
-            .width = static_cast<uint32_t>(width),
-            .height = static_cast<uint32_t>(height),
-        };
-    }
-};
-
 namespace Callback
 {
     void Error(int err, const char* description);
     void Key(GLFWwindow* window, int key, int scancode, int action, int mods);
     void FramebufferSize(GLFWwindow *window, int width, int height);
 }
+
+struct UserData
+{
+    int width = 0;
+    int height = 0;
+
+    UserData() = default;
+};
 
 UserData& GetUserData(GLFWwindow *window)
 {
@@ -47,10 +42,11 @@ void Callback::Key(GLFWwindow* window, int key, int scancode, int action, int mo
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-void Callback::FramebufferSize(GLFWwindow *window, int width, int height)
+void Callback::FramebufferSize(GLFWwindow *window, const int width, const int height)
 {
     auto &userData = GetUserData(window);
-    userData.SetFrameBufferSize(width, height);
+    userData.width = width;
+    userData.height = height;
 }
 
 void GlobalInit()
@@ -62,6 +58,11 @@ void GlobalInit()
         panic("Failed GLFW INIT");
 
     glfwSetErrorCallback(Callback::Error);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 }
 
 void GlobalTerminate()
@@ -73,15 +74,9 @@ void GlobalTerminate()
     glfwTerminate();
 }
 
-Window::Window(Engine *engine)
-    : Link(engine)
+void Window::Create()
 {
     GlobalInit();
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     handle = glfwCreateWindow(480, 480, "Concrete Window", nullptr, nullptr);
 
@@ -94,7 +89,7 @@ Window::Window(Engine *engine)
     glfwSetFramebufferSizeCallback(handle, Callback::FramebufferSize);
 }
 
-Window::~Window()
+void Window::Destroy()
 {
     glfwDestroyWindow(handle);
     GlobalTerminate();

@@ -3,7 +3,7 @@
 
 #include <vector>
 
-const std::vector<const char*> GetRequiredExtensions()
+std::vector<const char*> GetRequiredExtensions()
 {
     std::vector<const char*> extensions;
 
@@ -16,8 +16,7 @@ const std::vector<const char*> GetRequiredExtensions()
     return extensions;
 }
 
-Instance::Instance(Engine *engine)
-    : Link(engine)
+void Instance::Create()
 {
     constexpr VkInstanceCreateFlags flags = APPLE
     ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
@@ -48,7 +47,7 @@ Instance::Instance(Engine *engine)
         panic("Failed Instance Creation");
 }
 
-Instance::~Instance()
+void Instance::Destroy()
 {
     vkDestroyInstance(handle, nullptr);
 }

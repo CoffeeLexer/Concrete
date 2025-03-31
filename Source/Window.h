@@ -1,20 +1,23 @@
 #pragma once
 
 #include "Handle.h"
-#include "Link.h"
+#include "Ownership.h"
 
 class Engine;
 class GLFWwindow;
-class UserData;
+struct UserData;
 
 class Window
     : public Handle<GLFWwindow*>
-    , public Link<Engine>
+    , public Owned
 {
-    UserData *userData;
+    UserData *userData = nullptr;
 public:
-    explicit Window(Engine *engine);
-    ~Window();
+    explicit Window() = default;
+    ~Window() = default;
+
+    void Create();
+    void Destroy();
 
     static void PollEvents();
     [[nodiscard]] bool IsValid() const;
