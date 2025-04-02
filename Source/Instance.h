@@ -1,17 +1,15 @@
 #pragma once
 #include "Handle.h"
-#include "Ownership.h"
+#include "Scope.h"
 #include "vulkan/vulkan.h"
 
 class Engine;
 
-class Instance
-    : public Handle<VkInstance>
-    , public virtual Owned
+class Instance : public Scope, public Handle<VkInstance>
 {
-public:
+    friend class Scope;
     Instance() = default;
-    ~Instance() override = default;
+public:
     void Create();
     void Destroy();
 };

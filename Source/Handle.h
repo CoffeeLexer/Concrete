@@ -1,5 +1,4 @@
 #pragma once
-#include "Panic.h"
 
 template<typename T>
 class Handle
@@ -9,12 +8,10 @@ protected:
 public:
     Handle()
     {
-        handle = nullptr;
+        handle = T();
     }
-    operator T()
+    T& getHandle()
     {
-        if (handle == nullptr)
-            panic("handle is null");
         return handle;
     }
 };

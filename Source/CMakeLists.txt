@@ -50,6 +50,10 @@ set(SOURCES
     Panic.cpp
         Ownership.cpp
         Ownership.h
+        Scope.cpp
+        Scope.h
+        Scoped.cpp
+        Scoped.h
 )
 
 add_executable(${APP_NAME}

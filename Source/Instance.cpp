@@ -50,4 +50,5 @@ void Instance::Create()
 void Instance::Destroy()
 {
     vkDestroyInstance(handle, nullptr);
+    handle = VK_NULL_HANDLE;
 }

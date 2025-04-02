@@ -51,10 +51,9 @@ uint32_t Rating(VkPhysicalDevice physicalDevice)
     return limit;
 }
 
-PhysicalDevice::PhysicalDevice(Engine *engine)
-    : Link(engine)
+void PhysicalDevice::Create()
 {
-    VkInstance instance = Owner().instance;
+    VkInstance instance = getScope().instance;
     uint32_t count;
     std::vector<VkPhysicalDevice> devices;
 

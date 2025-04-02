@@ -1,17 +1,20 @@
 #pragma once
 
 #include "Handle.h"
-#include "Ownership.h"
+#include "Scoped.h"
 #include "vulkan/vulkan.h"
-
-class Engine;
 
 class PhysicalDevice
     : public Handle<VkPhysicalDevice>
-    , public Owned
+    , public Scoped
 {
+    friend Scope;
+    PhysicalDevice() = default;
+    void Create();
+    void Destroy();
+
     [[nodiscard]] VkPhysicalDeviceFeatures Features() const;
     [[nodiscard]] VkPhysicalDeviceProperties Properties() const;
 public:
-    explicit PhysicalDevice();
+
 };
