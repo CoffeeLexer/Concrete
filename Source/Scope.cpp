@@ -6,14 +6,12 @@
 
 Scope::Scope()
 {
-    instance = new Instance;
-    static_cast<Scoped&>(*instance).setScope(this);
+    instance = new Instance(this);
+    instance->Create();
+}
 
-
-    window = new Window;
-    device = new Device;
-    window->SetScope(this);
-    device->SetScope(this);
-    window->Create();
-    device->Create();
+Scope::~Scope()
+{
+    instance->Destroy();
+    delete instance;
 }

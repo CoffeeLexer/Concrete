@@ -13,12 +13,5 @@ class Scope
     Device *device;
 public:
     Scope();
-
-    ~Scope()
-    {
-        device->Destroy();
-        window->Destroy();
-        delete device;
-        delete window;
-    }
+    ~Scope();
 };

@@ -1,14 +1,16 @@
 #pragma once
+
 #include "Handle.h"
+#include "ScopeLink.h"
 #include "Scope.h"
+
 #include "vulkan/vulkan.h"
 
-class Engine;
-
-class Instance : public Scope, public Handle<VkInstance>
+class Instance : public Handle<VkInstance>
 {
-    friend class Scope;
-    Instance() = default;
+    friend Scope::Scope();
+    ScopeLink scope;
+    Instance(Scope *scope);
 public:
     void Create();
     void Destroy();

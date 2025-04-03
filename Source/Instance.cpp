@@ -3,6 +3,8 @@
 
 #include <vector>
 
+Instance::Instance(Scope *scope) : scope(scope) {}
+
 std::vector<const char*> GetRequiredExtensions()
 {
     std::vector<const char*> extensions;

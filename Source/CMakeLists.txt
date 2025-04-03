@@ -3,12 +3,12 @@ set(APP_NAME ConcreteApp)
 include(FetchContent)
 
 FetchContent_Declare(imgui
-    GIT_REPOSITORY  git@github.com:ocornut/imgui.git
+    GIT_REPOSITORY  https://github.com/ocornut/imgui.git
     GIT_TAG         2860d7ba05667be5e2e51cf27d658352884800b8
 )
 
 FetchContent_Declare(glfw
-    GIT_REPOSITORY  git@github.com:glfw/glfw.git
+    GIT_REPOSITORY  https://github.com/glfw/glfw.git
     GIT_TAG         e7ea71be039836da3a98cea55ae5569cb5eb885c
 )
 
@@ -53,7 +53,7 @@ set(SOURCES
         Scope.cpp
         Scope.h
         Scoped.cpp
-        Scoped.h
+        ScopeLink.h
 )
 
 add_executable(${APP_NAME}

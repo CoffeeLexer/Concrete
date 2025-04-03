@@ -4,12 +4,9 @@ template<typename T>
 class Handle
 {
 protected:
-    T handle;
+    T handle = T();
 public:
-    Handle()
-    {
-        handle = T();
-    }
+    Handle() = default;
     T& getHandle()
     {
         return handle;

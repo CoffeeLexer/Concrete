@@ -5,6 +5,8 @@
 
 #include "Engine.h"
 
+PhysicalDevice::PhysicalDevice(Scope *scope) : scope(scope) {}
+
 static VkPhysicalDeviceProperties StaticProperties(const VkPhysicalDevice device)
 {
     VkPhysicalDeviceProperties properties;
@@ -53,7 +55,7 @@ uint32_t Rating(VkPhysicalDevice physicalDevice)
 
 void PhysicalDevice::Create()
 {
-    VkInstance instance = getScope().instance;
+    auto &instance = scope().instance();
     uint32_t count;
     std::vector<VkPhysicalDevice> devices;
 
