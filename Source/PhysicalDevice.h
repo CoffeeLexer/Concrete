@@ -9,7 +9,9 @@ class PhysicalDevice : public Handle<VkPhysicalDevice>
 {
     friend Scope::Scope(), Scope::~Scope();
     ScopeLink scope;
-    PhysicalDevice(Scope *scope);
+
+    explicit PhysicalDevice(Scope *scope);
+
     void Create();
     void Destroy();
 public:

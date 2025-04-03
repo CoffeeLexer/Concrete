@@ -55,7 +55,7 @@ uint32_t Rating(VkPhysicalDevice physicalDevice)
 
 void PhysicalDevice::Create()
 {
-    auto &instance = scope().instance();
+    const VkInstance &instance = scope().getInstance().getHandle();
     uint32_t count;
     std::vector<VkPhysicalDevice> devices;
 

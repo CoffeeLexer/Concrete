@@ -8,6 +8,10 @@ Scope::Scope()
 {
     instance = new Instance(this);
     instance->Create();
+    physicalDevice = new PhysicalDevice(this);
+    physicalDevice->Create();
+    device = new Device(this);
+    device->Create();
 }
 
 Scope::~Scope()
