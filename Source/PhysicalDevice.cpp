@@ -7,50 +7,38 @@
 
 PhysicalDevice::PhysicalDevice(Scope *scope) : scope(scope) {}
 
-static VkPhysicalDeviceProperties StaticProperties(const VkPhysicalDevice device)
-{
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(device, &properties);
-    return properties;
-}
-
 VkPhysicalDeviceProperties PhysicalDevice::Properties() const
 {
-    return StaticProperties(handle);
-}
-
-static VkPhysicalDeviceFeatures StaticFeatures(const VkPhysicalDevice device)
-{
-    VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(device, &features);
-    return features;
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(handle, &properties);
+    return properties;
 }
 
 VkPhysicalDeviceFeatures PhysicalDevice::Features() const
 {
-    return StaticFeatures(handle);
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(handle, &features);
+    return features;
 }
 
-uint32_t Rating(VkPhysicalDevice physicalDevice)
+uint32_t PhysicalDevice::getRating() const
 {
-    const auto& features = StaticFeatures(physicalDevice);
-    const auto& properties = StaticProperties(physicalDevice);
-    auto limit = std::numeric_limits<uint32_t>::max();
+    const auto& properties = Properties();
+    const uint32_t limit = std::numeric_limits<uint32_t>::max();
 
     switch(properties.deviceType)
     {
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        return limit;
     default:
     case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-        limit /= 2;
+        return limit / 2;
     case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
     case VK_PHYSICAL_DEVICE_TYPE_CPU:
-        limit /= 2;
+        return limit / 4;
     case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-        limit /= 2;
-    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-        break;
+        return limit / 8;
     }
-    return limit;
 }
 
 void PhysicalDevice::Create()
@@ -63,17 +51,20 @@ void PhysicalDevice::Create()
     devices.resize(count);
     vkEnumeratePhysicalDevices(instance, &count, devices.data());
 
-    std::pair best = {
-        std::numeric_limits<uint32_t>::min(),
-        std::numeric_limits<uint32_t>::max(),
-    };
+    uint32_t bestRating;
+    VkPhysicalDevice bestDevice;
     for (uint32_t i = 0; i < count; i++)
     {
-        uint32_t rating = Rating(devices[i]);
+        handle = devices[i];
+        uint32_t rating = getRating();
 
-        if (best.first < rating)
-            best = { rating, i };
+        if (bestRating < rating)
+        {
+            bestRating = rating;
+            bestDevice = handle;
+        }
     }
-
-    handle = devices[best.second];
+    handle = bestDevice;
 }
+
+void PhysicalDevice::Destroy() {}

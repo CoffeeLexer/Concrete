@@ -7,7 +7,7 @@ protected:
     T handle = T();
 public:
     Handle() = default;
-    T& getHandle()
+    T getHandle()
     {
         return handle;
     }

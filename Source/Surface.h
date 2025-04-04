@@ -2,19 +2,20 @@
 
 #include <vector>
 
-#include "Link.h"
+#include "ScopeLink.h"
+#include "Scope.h"
 #include "Handle.h"
 #include "vulkan/vulkan.h"
 
-class Engine;
 
-class Surface
-    : public Handle<VkSurfaceKHR>
-    , public Link<Engine>
+class Surface : public Handle<VkSurfaceKHR>
 {
+    friend Scope::Scope(), Scope::~Scope();
+    ScopeLink scope;
+    explicit Surface(Scope *scope);
+    void Create();
+    void Destroy();
 public:
-    explicit Surface(Engine *engine);
-    ~Surface();
     VkSurfaceCapabilitiesKHR GetCaps();
     VkSurfaceFormatKHR GetBestFormat();
     std::vector<VkSurfaceFormatKHR> GetFormats();

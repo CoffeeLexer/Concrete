@@ -21,8 +21,6 @@ struct UserData
 {
     int width = 0;
     int height = 0;
-
-    UserData() = default;
 };
 
 UserData& GetUserData(GLFWwindow *window)

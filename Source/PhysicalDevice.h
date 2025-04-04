@@ -14,6 +14,8 @@ class PhysicalDevice : public Handle<VkPhysicalDevice>
 
     void Create();
     void Destroy();
+
+    [[nodiscard]] uint32_t getRating() const;
 public:
     [[nodiscard]] VkPhysicalDeviceFeatures Features() const;
     [[nodiscard]] VkPhysicalDeviceProperties Properties() const;

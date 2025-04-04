@@ -1,23 +1,24 @@
 #pragma once
 
 #include "Handle.h"
-#include "Ownership.h"
+#include "ScopeLink.h"
+#include "Scope.h"
 
 class Engine;
 class GLFWwindow;
-struct UserData;
 
-class Window
-    : public Handle<GLFWwindow*>
-    , public Owned
+class Window : public Handle<GLFWwindow*>
 {
-    UserData *userData = nullptr;
-public:
-    explicit Window() = default;
-    ~Window() = default;
+    friend Scope::Scope(), Scope::~Scope();
+    ScopeLink scope;
+    void *userData = nullptr;
+
+    explicit Window(Scope *scope);
 
     void Create();
     void Destroy();
+public:
+
 
     static void PollEvents();
     [[nodiscard]] bool IsValid() const;

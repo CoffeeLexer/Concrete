@@ -13,20 +13,20 @@ std::vector<const char*> GetExtensions()
 
 std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
 {
-    uint32_t familyCount;
-    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+    uint32_t count;
+    VkPhysicalDevice phyDev = scope().getPhyDevice().getHandle();
+    vkGetPhysicalDeviceQueueFamilyProperties(phyDev, &count, nullptr);
     std::vector<VkQueueFamilyProperties> properties;
-    properties.resize(familyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, properties.data());
+    properties.resize(count);
+    vkGetPhysicalDeviceQueueFamilyProperties(phyDev, &count, properties.data());
     return properties;
 }
 
 std::vector<VkBool32> Device::GetPresentSupportVector()
 {
     uint32_t familyCount;
-    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
-    VkSurfaceKHR surface = Owner().surface;
+    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
+    VkSurfaceKHR surface = scope().getSurface().getHandle();
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
     std::vector<VkBool32> supportArray;
     supportArray.resize(familyCount);
