@@ -72,6 +72,8 @@ void GlobalTerminate()
     glfwTerminate();
 }
 
+Window::Window(Scope *scope) : scope(scope) {}
+
 void Window::Create()
 {
     GlobalInit();

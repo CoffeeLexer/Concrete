@@ -10,8 +10,9 @@ class Scope
 {
     Instance *instance;
     Window *window;
+    Surface *surface;
     PhysicalDevice *physicalDevice;
-    Device *device;
+    // Device *device;
 public:
     Scope();
     ~Scope();
@@ -19,4 +20,5 @@ public:
     PhysicalDevice& getPhyDevice();
     Device& getDevice();
     Window& getWindow();
+    Surface& getSurface();
 };

@@ -1,4 +1,7 @@
 #include "Device.h"
+
+#include <set>
+
 #include "Engine.h"
 #include "Panic.h"
 
@@ -42,8 +45,7 @@ std::vector<VkBool32> Device::GetPresentSupportVector()
 
 void Device::Create()
 {
-    VkPhysicalDevice physicalDevice = Owner().physicalDevice;
-    VkDevice device = Owner().device;
+    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
 
     float priorities[] = {1.0f, 1.0f};
     const auto & [presentFamily, graphicsFamily] = PickQueueFamily();
@@ -99,18 +101,17 @@ void Device::Create()
         .pEnabledFeatures = nullptr,
     };
 
-    VkResult result = vkCreateDevice(physicalDevice, &ci, nullptr, &device);
+    VkResult result = vkCreateDevice(physicalDevice, &ci, nullptr, &handle);
     if (result != VK_SUCCESS)
         panic("Failed Device Creation");
 
-    vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
-    vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
+    vkGetDeviceQueue(handle, graphicsFamily, 0, &graphicsQueue);
+    vkGetDeviceQueue(handle, presentFamily, 0, &presentQueue);
 }
 
 void Device::Destroy()
 {
-    VkDevice device = Owner().device;
-    vkDestroyDevice(device, nullptr);
+    vkDestroyDevice(handle, nullptr);
 }
 
 std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
@@ -118,6 +119,7 @@ std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
     auto presentSupport = GetPresentSupportVector();
     auto queueFamilyProperties = GetQueueFamilyProperties();
 
+    std::vector<uint32_t> candidates(presentSupport.size(), 0);
     for (uint32_t i = 0; i < presentSupport.size(); i++)
     {
         if (presentSupport[i] == VK_TRUE)

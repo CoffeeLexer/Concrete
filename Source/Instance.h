@@ -10,7 +10,7 @@ class Instance : public Handle<VkInstance>
 {
     friend Scope::Scope();
     ScopeLink scope;
-    Instance(Scope *scope);
+    explicit Instance(Scope *scope);
 public:
     void Create();
     void Destroy();

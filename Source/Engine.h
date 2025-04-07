@@ -11,16 +11,16 @@
 
 class Engine
 {
-public:
-    Handler<Window>         window;
-    Handler<Surface>        surface;
-    Handler<Instance>       instance;
-    Handler<PhysicalDevice> physicalDevice;
-    Handler<Device>         device;
-    Handler<Backbuffer>     backbuffer;
-    Handler<Pipeline>       pipeline;
-
-    explicit Engine();
-    ~Engine();
-    void run();
+// public:
+//     Handler<Window>         window;
+//     Handler<Surface>        surface;
+//     Handler<Instance>       instance;
+//     Handler<PhysicalDevice> physicalDevice;
+//     Handler<Device>         device;
+//     Handler<Backbuffer>     backbuffer;
+//     Handler<Pipeline>       pipeline;
+//
+//     explicit Engine();
+//     ~Engine();
+//     void run();
 };

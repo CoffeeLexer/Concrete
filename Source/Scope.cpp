@@ -1,8 +1,9 @@
 #include "Scope.h"
 
+#include "Window.h"
 #include "Instance.h"
 #include "PhysicalDevice.h"
-#include "Device.h"
+#include "Surface.h"
 
 Scope::Scope()
 {
@@ -10,12 +11,47 @@ Scope::Scope()
     instance->Create();
     physicalDevice = new PhysicalDevice(this);
     physicalDevice->Create();
-    device = new Device(this);
-    device->Create();
+    window = new Window(this);
+    window->Create();
+    surface = new Surface(this);
+    surface->Create();
+    // device = new Device(this);
+    // device->Create();
 }
 
 Scope::~Scope()
 {
+    surface->Destroy();
+    delete surface;
+    window->Destroy();
+    delete window;
+    physicalDevice->Destroy();
+    delete physicalDevice;
     instance->Destroy();
     delete instance;
+}
+
+Instance& Scope::getInstance()
+{
+    return *instance;
+}
+
+PhysicalDevice& Scope::getPhyDevice()
+{
+    return *physicalDevice;
+}
+
+Device &Scope::getDevice()
+{
+    // return *device;
+}
+
+Surface &Scope::getSurface()
+{
+    return *surface;
+}
+
+Window &Scope::getWindow()
+{
+    return *window;
 }

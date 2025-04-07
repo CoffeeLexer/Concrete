@@ -33,27 +33,20 @@ target_include_directories(imgui
 target_link_libraries(imgui PUBLIC glfw Vulkan::Vulkan)
 
 set(SOURCES
-    Device.cpp
-    Engine.cpp
+#    Device.cpp
+#    Engine.cpp
     Instance.cpp
     PhysicalDevice.cpp
     Surface.cpp
     Window.cpp
-    Backbuffer.cpp
-    Image.cpp
-    DescriptorSetLayout.cpp
-    PipelineLayout.cpp
-    RenderPass.cpp
-    Pipeline.cpp
-    Handle.cpp
-    Handle.h
+#    Backbuffer.cpp
+#    Image.cpp
+#    DescriptorSetLayout.cpp
+#    PipelineLayout.cpp
+#    RenderPass.cpp
+#    Pipeline.cpp
     Panic.cpp
-        Ownership.cpp
-        Ownership.h
-        Scope.cpp
-        Scope.h
-        Scoped.cpp
-        ScopeLink.h
+    Scope.cpp
 )
 
 add_executable(${APP_NAME}

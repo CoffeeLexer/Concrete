@@ -11,6 +11,20 @@ constexpr VkFormat priorities[] = {
 
 Surface::Surface(Scope *scope) : scope(scope) {}
 
+VkSurfaceFormatKHR Surface::selectBestFormat()
+{
+    auto formats = GetFormats();
+    for (const auto& p : priorities)
+    {
+        for (const auto& format : formats)
+        {
+            if (p == format.format)
+                return format;
+        }
+    }
+    return formats.at(0);
+}
+
 void Surface::Create()
 {
     VkInstance instance = scope().getInstance().getHandle();
@@ -18,6 +32,7 @@ void Surface::Create()
     VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &handle);
     if (result != VK_SUCCESS)
         panic("Couldn't create surface");
+    format = selectBestFormat();
 }
 
 std::vector<VkSurfaceFormatKHR> Surface::GetFormats()
@@ -42,20 +57,5 @@ VkSurfaceCapabilitiesKHR Surface::GetCaps()
     VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
     VkSurfaceCapabilitiesKHR caps;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, handle, &caps);
-    return caps; 
-}
-
-VkSurfaceFormatKHR Surface::GetBestFormat()
-{
-    auto formats = GetFormats();
-
-    for (const auto& p : priorities)
-    {
-        for (const auto& format : formats)
-        {
-            if (p == format.format)
-                return format;
-        }
-    }
-    return formats.at(0);
+    return caps;
 }

@@ -4,8 +4,7 @@
 
 int main()
 {
-    Engine engine = Engine();
-    engine.run();
+    Scope s = {};
 
     return 0;
 }
