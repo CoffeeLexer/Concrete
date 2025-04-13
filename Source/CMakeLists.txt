@@ -33,13 +33,13 @@ target_include_directories(imgui
 target_link_libraries(imgui PUBLIC glfw Vulkan::Vulkan)
 
 set(SOURCES
-#    Device.cpp
+    Device.cpp
 #    Engine.cpp
     Instance.cpp
     PhysicalDevice.cpp
     Surface.cpp
     Window.cpp
-#    Backbuffer.cpp
+    Backbuffer.cpp
 #    Image.cpp
 #    DescriptorSetLayout.cpp
 #    PipelineLayout.cpp

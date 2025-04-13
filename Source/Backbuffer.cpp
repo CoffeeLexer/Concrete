@@ -17,7 +17,7 @@ VkPresentModeKHR Backbuffer::GetBestPresentMode()
     modes.resize(count);
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, modes.data());
 
-    VkPresentModeKHR priorities[] = {
+    const VkPresentModeKHR priorities[] = {
         VK_PRESENT_MODE_MAILBOX_KHR,
         VK_PRESENT_MODE_FIFO_KHR,
         VK_PRESENT_MODE_FIFO_RELAXED_KHR,

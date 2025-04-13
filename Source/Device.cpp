@@ -1,7 +1,5 @@
 #include "Device.h"
 
-#include <set>
-
 #include "Engine.h"
 #include "Panic.h"
 
@@ -13,6 +11,8 @@ std::vector<const char*> GetExtensions()
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 }
+
+Device::Device(Scope *scope) : scope(scope) {}
 
 std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
 {
@@ -28,39 +28,34 @@ std::vector<VkQueueFamilyProperties> Device::GetQueueFamilyProperties()
 std::vector<VkBool32> Device::GetPresentSupportVector()
 {
     uint32_t familyCount;
-    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
-    VkSurfaceKHR surface = scope().getSurface().getHandle();
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+    VkPhysicalDevice phyDev = scope().getPhyDevice().getHandle();
+    VkSurfaceKHR surf = scope().getSurface().getHandle();
+    vkGetPhysicalDeviceQueueFamilyProperties(phyDev, &familyCount, nullptr);
     std::vector<VkBool32> supportArray;
     supportArray.resize(familyCount);
 
     for (uint32_t i = 0; i < familyCount; i++)
-    {
-        VkBool32 supported;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supported);
-        supportArray[i] = supported;
-    }
+        vkGetPhysicalDeviceSurfaceSupportKHR(phyDev, i, surf, &supportArray[i]);
+
     return supportArray;
 }
 
 void Device::Create()
 {
     VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
+    selectQueueFamilies();
 
     float priorities[] = {1.0f, 1.0f};
-    const auto & [presentFamily, graphicsFamily] = PickQueueFamily();
-    graphicsIndex = graphicsFamily;
-    presentIndex = presentFamily;
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = {};
 
-    if (presentFamily == graphicsFamily)
+    if (graphicsIndex == presentIndex)
     {
         VkDeviceQueueCreateInfo queueCreateInfo = {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = presentFamily,
+            .queueFamilyIndex = presentIndex.value(),
             .queueCount = 2,
             .pQueuePriorities = priorities,
         };
@@ -72,7 +67,7 @@ void Device::Create()
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = graphicsFamily,
+            .queueFamilyIndex = graphicsIndex.value(),
             .queueCount = 1,
             .pQueuePriorities = priorities,
         };
@@ -80,10 +75,11 @@ void Device::Create()
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = presentFamily,
+            .queueFamilyIndex = presentIndex.value(),
             .queueCount = 1,
             .pQueuePriorities = priorities,
         };
+        queueCreateInfos.push_back(graphicsQueueInfo);
         queueCreateInfos.push_back(presentQueueInfo);
     }
 
@@ -105,8 +101,9 @@ void Device::Create()
     if (result != VK_SUCCESS)
         panic("Failed Device Creation");
 
-    vkGetDeviceQueue(handle, graphicsFamily, 0, &graphicsQueue);
-    vkGetDeviceQueue(handle, presentFamily, 0, &presentQueue);
+    vkGetDeviceQueue(handle, graphicsIndex.value(), 0, &graphicsQueue);
+    const uint32_t presentQueueIndex = graphicsIndex == presentIndex ? 0 : 1;
+    vkGetDeviceQueue(handle, presentIndex.value(), presentQueueIndex, &presentQueue);
 }
 
 void Device::Destroy()
@@ -114,61 +111,90 @@ void Device::Destroy()
     vkDestroyDevice(handle, nullptr);
 }
 
-std::tuple<uint32_t, uint32_t> Device::PickQueueFamily()
+enum class Support : uint32_t {
+    None = 0,
+    Graphics = 1,
+    Compute = 2,
+    Transfer = 4,
+    Present = 8,
+};
+
+constexpr Support operator|(Support lhs, Support rhs)
+{
+    return static_cast<Support>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr void operator|=(Support& lhs, Support rhs)
+{
+    lhs = lhs | rhs;
+}
+
+constexpr Support operator&(Support lhs, Support rhs)
+{
+    return static_cast<Support>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+void Device::selectQueueFamilies()
 {
     auto presentSupport = GetPresentSupportVector();
     auto queueFamilyProperties = GetQueueFamilyProperties();
 
-    std::vector<uint32_t> candidates(presentSupport.size(), 0);
+    std::vector candidates(presentSupport.size(), Support::None);
+
     for (uint32_t i = 0; i < presentSupport.size(); i++)
     {
         if (presentSupport[i] == VK_TRUE)
-        {
-            const auto& property = queueFamilyProperties.at(i);
-            if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                return {i, i};
-        }
-    }
+            candidates[i] |= Support::Present;
 
-    uint32_t graphicsQueue = UINT32_MAX;
-    for (uint32_t i = 0; i < queueFamilyProperties.size(); i++)
-    {
         const auto& property = queueFamilyProperties.at(i);
-
         if (property.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-        {
-            graphicsQueue = i;
-            break;
-        }
+            candidates[i] |= Support::Graphics;
+
+        if (property.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            candidates[i] |= Support::Compute;
+
+        if (property.queueFlags & VK_QUEUE_TRANSFER_BIT)
+            candidates[i] |= Support::Transfer;
     }
 
-    if (graphicsQueue == UINT32_MAX)
-        panic("No queue graphics family");
-
-    uint32_t presentQueue = UINT32_MAX;
-    for (uint32_t i = 0; i < presentSupport.size(); i++)
+    // Let's prefer 1 queue over 2
+    for (uint32_t i = 0; i < candidates.size(); i++)
     {
-        if (presentSupport.at(i) == VK_TRUE)
-        {
-            presentQueue = i;
-            break;
+        Support all = Support::Present | Support::Graphics;
+        auto candidate = candidates[i];
+        if ((candidate & all) == all) {
+            graphicsIndex = i;
+            presentIndex = i;
+            return;
         }
     }
 
-    if (presentQueue == UINT32_MAX)
-        panic("No queue present family");
-
-    return {presentQueue, graphicsQueue};
+    for (uint32_t i = 0; i < candidates.size(); i++)
+    {
+        const auto& candidate = candidates[i];
+        if (!presentIndex.has_value() &&
+            (candidate & Support::Present) == Support::Present)
+        {
+            presentIndex = i;
+        }
+        if (!graphicsIndex.has_value() &&
+            (candidate & Support::Graphics) == Support::Graphics)
+        {
+            graphicsIndex = i;
+        }
+    }
+    if (!graphicsIndex.has_value() || !presentIndex.has_value())
+        panic("Queue family support missing minimal requirement");
 }
 
 uint32_t Device::GetGraphicsIndex() const
 {
-    return graphicsIndex;
+    return graphicsIndex.value();
 }
 
 uint32_t Device::GetPresentIndex() const
 {
-    return presentIndex;
+    return presentIndex.value();
 }
 VkQueue Device::GetGraphicsQueue() const
 {

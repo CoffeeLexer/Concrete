@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "Instance.h"
 #include "PhysicalDevice.h"
+#include "Device.h"
 #include "Surface.h"
 
 Scope::Scope()
@@ -15,12 +16,14 @@ Scope::Scope()
     window->Create();
     surface = new Surface(this);
     surface->Create();
-    // device = new Device(this);
-    // device->Create();
+    device = new Device(this);
+    device->Create();
 }
 
 Scope::~Scope()
 {
+    device->Destroy();
+    delete device;
     surface->Destroy();
     delete surface;
     window->Destroy();
@@ -43,7 +46,7 @@ PhysicalDevice& Scope::getPhyDevice()
 
 Device &Scope::getDevice()
 {
-    // return *device;
+    return *device;
 }
 
 Surface &Scope::getSurface()

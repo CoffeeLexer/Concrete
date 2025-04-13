@@ -3,17 +3,21 @@
 #include "vulkan/vulkan.h"
 
 #include "Handle.h"
-#include "Link.h"
+#include "ScopeLink.h"
+#include "Scope.h"
 #include "RenderPass.h"
 
 #include <vector>
 
-class Engine;
-
 class Backbuffer
     : public Handle<VkSwapchainKHR>
-    , public Link<Engine>
 {
+    friend Scope::Scope(), Scope::~Scope();
+    ScopeLink scope;
+
+    explicit Backbuffer(Scope *);
+    ~Backbuffer();
+
     RenderPass *renderPass;
 
     VkFormat format;
@@ -40,8 +44,6 @@ class Backbuffer
     void AllocateCommandPool();
 
 public:
-    explicit Backbuffer(Engine* engine);
-    ~Backbuffer();
     VkFormat GetFormat();
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();

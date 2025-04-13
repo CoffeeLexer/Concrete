@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "vulkan/vulkan.h"
 #include <vector>
 
@@ -14,8 +16,8 @@ class Device : public Handle<VkDevice>
 
     VkQueue graphicsQueue;
     VkQueue presentQueue;
-    uint32_t graphicsIndex;
-    uint32_t presentIndex;
+    std::optional<uint32_t> graphicsIndex;
+    std::optional<uint32_t> presentIndex;
 
     void Create();
     void Destroy();
@@ -25,7 +27,7 @@ class Device : public Handle<VkDevice>
     std::vector<VkBool32> GetPresentSupportVector();
 
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties();
-    std::tuple<uint32_t, uint32_t> PickQueueFamily();
+    void selectQueueFamilies();
 public:
     [[nodiscard]] uint32_t GetGraphicsIndex() const;
     [[nodiscard]] uint32_t GetPresentIndex() const;

@@ -12,7 +12,7 @@ class Scope
     Window *window;
     Surface *surface;
     PhysicalDevice *physicalDevice;
-    // Device *device;
+    Device *device;
 public:
     Scope();
     ~Scope();
