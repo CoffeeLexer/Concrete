@@ -3,14 +3,11 @@
 class Scope;
 class ScopeLink
 {
-    Scope *scope = nullptr;
+    Scope &scope;
 public:
-    ScopeLink(Scope *ptr)
-    {
-        scope = ptr;
-    }
+    ScopeLink(Scope &scope) : scope(scope) {}
     [[nodiscard]] Scope& operator()()
     {
-        return *scope;
+        return scope;
     }
 };

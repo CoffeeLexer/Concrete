@@ -5,7 +5,7 @@
 
 #include "Engine.h"
 
-PhysicalDevice::PhysicalDevice(Scope *scope) : scope(scope) {}
+PhysicalDevice::PhysicalDevice(Scope &scope) : Object(scope) {}
 
 VkPhysicalDeviceProperties PhysicalDevice::Properties() const
 {
@@ -41,7 +41,7 @@ uint32_t PhysicalDevice::getRating() const
     }
 }
 
-void PhysicalDevice::Create()
+void PhysicalDevice::Create() override
 {
     const VkInstance &instance = scope().getInstance().getHandle();
     uint32_t count;
@@ -67,4 +67,4 @@ void PhysicalDevice::Create()
     handle = bestDevice;
 }
 
-void PhysicalDevice::Destroy() {}
+void PhysicalDevice::Destroy() override {}

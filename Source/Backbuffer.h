@@ -18,6 +18,7 @@ class Backbuffer
     explicit Backbuffer(Scope *);
     ~Backbuffer();
 
+
     RenderPass *renderPass;
 
     VkFormat format;

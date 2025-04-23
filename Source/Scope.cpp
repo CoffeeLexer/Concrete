@@ -10,7 +10,7 @@ Scope::Scope()
 {
     instance = new Instance(this);
     instance->Create();
-    physicalDevice = new PhysicalDevice(this);
+    physicalDevice = new PhysicalDevice(*this);
     physicalDevice->Create();
     window = new Window(this);
     window->Create();

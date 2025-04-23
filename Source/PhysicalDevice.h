@@ -1,22 +1,20 @@
 #pragma once
 
 #include "Handle.h"
-#include "ScopeLink.h"
-#include "Scope.h"
+#include "Object.h"
 #include "vulkan/vulkan.h"
 
-class PhysicalDevice : public Handle<VkPhysicalDevice>
+class PhysicalDevice final
+    : public Object
+    , public Handle<VkPhysicalDevice>
 {
-    friend Scope::Scope(), Scope::~Scope();
-    ScopeLink scope;
-
-    explicit PhysicalDevice(Scope *scope);
-
-    void Create();
-    void Destroy();
+    void Create() override;
+    void Destroy() override;
 
     [[nodiscard]] uint32_t getRating() const;
 public:
+    explicit PhysicalDevice(Scope &scope);
+
     [[nodiscard]] VkPhysicalDeviceFeatures Features() const;
     [[nodiscard]] VkPhysicalDeviceProperties Properties() const;
 };

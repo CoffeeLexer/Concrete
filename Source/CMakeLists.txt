@@ -47,6 +47,8 @@ set(SOURCES
 #    Pipeline.cpp
     Panic.cpp
     Scope.cpp
+        Object.cpp
+        Object.h
 )
 
 add_executable(${APP_NAME}

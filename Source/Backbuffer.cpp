@@ -7,11 +7,13 @@
 
 #include "Engine.h"
 
+Backbuffer::Backbuffer(Scope *scope) : scope(scope) {}
+
 VkPresentModeKHR Backbuffer::GetBestPresentMode()
 {
     uint32_t count;
-    const VkSurfaceKHR surface = Owner().surface;
-    const VkPhysicalDevice physicalDevice = Owner().physicalDevice;
+    VkSurfaceKHR surface = scope().getSurface().getHandle();
+    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
     std::vector<VkPresentModeKHR> modes = {};
     modes.resize(count);
@@ -40,12 +42,10 @@ VkFormat Backbuffer::GetFormat()
     return this->format;
 }
 
-Backbuffer::Backbuffer(Engine *engine)
-    : Link(engine)
-    , currentImage(0)
+void Backbuffer::Create()
 {
     VkPresentModeKHR presentMode = GetBestPresentMode();
-    Surface &surface = Owner().surface;
+    Surface &surface = scope().getSurface();
     const auto caps = surface.GetCaps();
     VkSurfaceFormatKHR format = surface.GetBestFormat();
     this->format = format.format;
