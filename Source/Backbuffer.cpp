@@ -5,19 +5,35 @@
 #include <thread>
 #include <chrono>
 
-#include "Engine.h"
+#include "Scope.h"
+#include "GLFW/glfw3.h"
 
-Backbuffer::Backbuffer(Scope *scope) : scope(scope) {}
+Backbuffer::Backbuffer(Scope &scope) : scope(scope)
+{
+    createSurface();
+}
+
+void Backbuffer::createSurface()
+{
+    const auto instance = scope.getInstance().getVkInstance();
+    const auto window = scope.getWindow().getWindow();
+    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+    if (result != VK_SUCCESS)
+        panic("Couldn't create surface");
+}
+
+struct SurfacePresentModes : std::vector<VkPresentModeKHR> {
+    SurfacePresentModes(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+        uint32_t count;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
+        this->resize(count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, this->data());
+    }
+};
 
 VkPresentModeKHR Backbuffer::GetBestPresentMode()
 {
-    uint32_t count;
-    VkSurfaceKHR surface = scope().getSurface().getHandle();
-    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
-    std::vector<VkPresentModeKHR> modes = {};
-    modes.resize(count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, modes.data());
+    auto presentModes = SurfacePresentModes(scope.getDevice().getVkPhysicalDevice(), surface);
 
     const VkPresentModeKHR priorities[] = {
         VK_PRESENT_MODE_MAILBOX_KHR,
@@ -28,13 +44,13 @@ VkPresentModeKHR Backbuffer::GetBestPresentMode()
 
     for (const auto& p : priorities)
     {
-        for (uint32_t i = 0; i < count; i++)
+        for (uint32_t i = 0; i < presentModes.size(); i++)
         {
-            if (p == modes.at(i))
+            if (p == presentModes.at(i))
                 return p;
         }
     }
-    return modes.at(0);
+    return presentModes.at(0);
 }
 
 VkFormat Backbuffer::GetFormat()

@@ -18,21 +18,3 @@ Device::~Device()
 {
     vkDestroyDevice(logicalDevice, nullptr);
 }
-
-uint32_t Device::GetGraphicsIndex() const
-{
-    return graphicsIndex.value();
-}
-
-uint32_t Device::GetPresentIndex() const
-{
-    return presentIndex.value();
-}
-VkQueue Device::GetGraphicsQueue() const
-{
-    return graphicsQueue;
-}
-VkQueue Device::GetPresentQueue() const
-{
-    return presentQueue;
-}

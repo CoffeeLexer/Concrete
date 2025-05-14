@@ -34,22 +34,12 @@ target_link_libraries(imgui PUBLIC glfw Vulkan::Vulkan)
 
 set(SOURCES
     Device.cpp
-#    Engine.cpp
     Instance.cpp
     PhysicalDevice.cpp
-    Surface.cpp
     Window.cpp
-    Backbuffer.cpp
-#    Image.cpp
-#    DescriptorSetLayout.cpp
-#    PipelineLayout.cpp
-#    RenderPass.cpp
-#    Pipeline.cpp
     Panic.cpp
     Scope.cpp
-        Object.cpp
-        Object.h
-        LogicalDevice.cpp
+    LogicalDevice.cpp
 )
 
 add_executable(${APP_NAME}

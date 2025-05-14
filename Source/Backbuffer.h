@@ -1,22 +1,20 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
-
 #include "Handle.h"
-#include "ScopeLink.h"
-#include "Scope.h"
 #include "RenderPass.h"
-
 #include <vector>
 
+class Scope;
 class Backbuffer
-    : public Handle<VkSwapchainKHR>
 {
-    friend Scope::Scope(), Scope::~Scope();
-    ScopeLink scope;
+    Scope &scope;
 
-    explicit Backbuffer(Scope *);
-    ~Backbuffer();
+    VkSwapchainKHR swapchain;
+    VkSurfaceKHR surface;
+
+    void createSurface();
+
 
 
     RenderPass *renderPass;
@@ -45,6 +43,12 @@ class Backbuffer
     void AllocateCommandPool();
 
 public:
+    Backbuffer(Scope &scope);
+    ~Backbuffer();
+
+        Handle<VkSwapchainKHR> getSwapchain{swapchain};
+    Handle<VkSurfaceKHR> getSurface{surface};
+
     VkFormat GetFormat();
     VkRenderPass GetRenderPass();
     uint32_t GetImageCount();

@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Ownership.h"
 #include "Instance.h"
-#include "PhysicalDevice.h"
 #include "Device.h"
-#include "Surface.h"
 #include "Window.h"
 #include "Backbuffer.h"
 #include "Pipeline.h"

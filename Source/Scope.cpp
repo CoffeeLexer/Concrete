@@ -5,15 +5,9 @@
 #include "Device.h"
 
 Scope::Scope()
-{
-    instance = new Instance(*this);
-    window = new Window(*this);
-    device = new Device(*this);
-}
+    : instance(*this)
+    , window(*this)
+    , device(*this)
+{}
 
-Scope::~Scope()
-{
-    delete device;
-    delete window;
-    delete instance;
-}
+Scope::~Scope() {}

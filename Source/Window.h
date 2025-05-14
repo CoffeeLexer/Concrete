@@ -1,13 +1,10 @@
 #pragma once
 
 #include "Handle.h"
-#include "ScopeLink.h"
-#include "Scope.h"
 #include <vulkan/vulkan.h>
 
-class Engine;
 class GLFWwindow;
-
+class Scope;
 struct UserData
 {
     int width = 0;
@@ -18,18 +15,14 @@ class Window
 {
     Scope &scope;
     GLFWwindow *window;
-    VkSurfaceKHR surface;
-
     UserData userData = {};
 
     void createWindow();
-    void createSurface();
 public:
     explicit Window(Scope &scope);
     ~Window();
 
     Handle<GLFWwindow*> getWindow{window};
-    Handle<VkSurfaceKHR> getSurface{surface};
 
     static void PollEvents();
     [[nodiscard]] bool IsValid() const;

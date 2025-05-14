@@ -1,21 +1,23 @@
 #pragma once
 
 #include "Handle.h"
-
-class Instance;
-class Window;
-class Device;
+#include "Instance.h"
+#include "Window.h"
+#include "Device.h"
+#include "Backbuffer.h"
 
 class Scope
 {
-    Instance *instance;
-    Window *window;
-    Device *device;
+    Instance instance;
+    Window window;
+    Device device;
+    Backbuffer backbuffer;
 public:
     Scope();
     ~Scope();
 
-    Handle<Instance> getInstance{*instance};
-    Handle<Window> getWindow{*window};
-    Handle<Device> getDevice{*device};
+    Handle<Instance> getInstance{instance};
+    Handle<Window> getWindow{window};
+    Handle<Device> getDevice{device};
+    Handle<Backbuffer> getBackbuffer{backbuffer};
 };

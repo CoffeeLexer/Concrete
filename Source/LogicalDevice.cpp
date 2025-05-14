@@ -1,6 +1,7 @@
 #include "Device.h"
 
 #include "Panic.h"
+#include "Scope.h"
 
 std::vector<const char*> GetExtensions()
 {
@@ -19,7 +20,7 @@ struct QueueFamilyProperties : public std::vector<VkQueueFamilyProperties> {
 };
 
 struct PresentSupportList : public std::vector<VkBool32> {
-    PresentSupportList(const VkPhysicalDevice& phyDevice, const VkSurfaceKHR &surf) {
+    PresentSupportList(const VkPhysicalDevice phyDevice, const VkSurfaceKHR surf) {
         uint32_t familyCount;
         vkGetPhysicalDeviceQueueFamilyProperties(phyDevice, &familyCount, nullptr);
         this->resize(familyCount);
@@ -40,10 +41,10 @@ namespace Support {
 
 Queues Device::selectQueueFamilies()
 {
-    auto presentSupport = PresentSupportList{physicalDevice, surface???};
+    auto presentSupport = PresentSupportList{physicalDevice, scope.getWindow().getSurface()};
     auto queueFamilyProperties = QueueFamilyProperties{physicalDevice};
 
-    std::vector candidates(presentSupport.size(), Support::None);
+    std::vector<int> candidates(presentSupport.size(), Support::None);
 
     for (uint32_t i = 0; i < presentSupport.size(); i++)
     {

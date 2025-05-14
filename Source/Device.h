@@ -6,8 +6,6 @@
 #include <vector>
 
 #include "Handle.h"
-#include "ScopeLink.h"
-#include "Scope.h"
 
 struct Queue
 {
@@ -24,12 +22,14 @@ struct Queues
     }
 };
 
+class Scope;
 class Device
 {
     Scope &scope;
 
     VkPhysicalDevice physicalDevice;
     VkDevice logicalDevice;
+    Queues queues;
 
     Queues selectQueueFamilies();
     VkPhysicalDevice createPhysicalDevice();
@@ -38,11 +38,7 @@ public:
     explicit Device(Scope &scope);
     ~Device();
 
-    Queues queues;
-
-    [[nodiscard]] uint32_t GetGraphicsIndex() const;
-    [[nodiscard]] uint32_t GetPresentIndex() const;
-
-    [[nodiscard]] VkQueue GetGraphicsQueue() const;
-    [[nodiscard]] VkQueue GetPresentQueue() const;
+    Handle<Queues> getQueues{queues};
+    Handle<VkPhysicalDevice> getVkPhysicalDevice{physicalDevice};
+    Handle<VkDevice> getVkDevice{logicalDevice};
 };

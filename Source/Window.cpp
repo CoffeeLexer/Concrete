@@ -33,7 +33,6 @@ void GlobalTerminate()
 Window::Window(Scope &scope) : scope(scope)
 {
     createWindow();
-    createSurface();
 }
 
 void Window::createWindow()
@@ -49,15 +48,6 @@ void Window::createWindow()
     glfwSetFramebufferSizeCallback(window, Callback::FramebufferSize);
 }
 
-void Window::createSurface()
-{
-    VkInstance instance = scope.getInstance().getInstance();
-    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
-    if (result != VK_SUCCESS)
-        panic("Couldn't create surface");
-}
-
-
 Window::~Window()
 {
     glfwDestroyWindow(window);
@@ -72,4 +62,37 @@ void Window::PollEvents()
 bool Window::IsValid() const
 {
     return !glfwWindowShouldClose(window);
+}
+
+constexpr VkFormat priorities[] = {
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_SRGB,
+};
+struct SurfaceFormats : std::vector<VkSurfaceFormatKHR> {
+    SurfaceFormats(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+        uint32_t count;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
+        this->resize(count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, this->data());
+    }
+};
+
+struct SurfaceCaps : VkSurfaceCapabilitiesKHR {
+    SurfaceCaps(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, this);
+    }
+};
+
+VkSurfaceFormatKHR Window::selectBestFormat()
+{
+    auto formats = SurfaceFormats{scope.getDevice().getVkPhysicalDevice(), surface};
+    for (const auto& p : priorities)
+    {
+        for (const auto& format : formats)
+        {
+            if (p == format.format)
+                return format;
+        }
+    }
+    return formats.at(0);
 }
