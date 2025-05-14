@@ -9,26 +9,37 @@
 #include "ScopeLink.h"
 #include "Scope.h"
 
-class Device : public Handle<VkDevice>
+struct Queue
 {
-    friend Scope::Scope(), Scope::~Scope();
-    ScopeLink scope;
+    VkQueue queue = VK_NULL_HANDLE;
+    uint32_t index = 0;
+};
 
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-    std::optional<uint32_t> graphicsIndex;
-    std::optional<uint32_t> presentIndex;
+struct Queues
+{
+    Queue graphics = {};
+    Queue present = {};
+    bool sameFamily() const {
+        return graphics.index == present.index;
+    }
+};
 
-    void Create();
-    void Destroy();
+class Device
+{
+    Scope &scope;
 
-    explicit Device(Scope *scope);
+    VkPhysicalDevice physicalDevice;
+    VkDevice logicalDevice;
 
-    std::vector<VkBool32> GetPresentSupportVector();
-
-    std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties();
-    void selectQueueFamilies();
+    Queues selectQueueFamilies();
+    VkPhysicalDevice createPhysicalDevice();
+    VkDevice createLogicalDevice();
 public:
+    explicit Device(Scope &scope);
+    ~Device();
+
+    Queues queues;
+
     [[nodiscard]] uint32_t GetGraphicsIndex() const;
     [[nodiscard]] uint32_t GetPresentIndex() const;
 

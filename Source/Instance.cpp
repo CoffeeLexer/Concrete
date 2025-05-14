@@ -3,8 +3,6 @@
 
 #include <vector>
 
-Instance::Instance(Scope *scope) : scope(scope) {}
-
 std::vector<const char*> GetRequiredExtensions()
 {
     std::vector<const char*> extensions;
@@ -18,7 +16,7 @@ std::vector<const char*> GetRequiredExtensions()
     return extensions;
 }
 
-void Instance::Create()
+Instance::Instance(Scope &scope) : scope(scope)
 {
     constexpr VkInstanceCreateFlags flags = APPLE
     ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
@@ -49,7 +47,7 @@ void Instance::Create()
         panic("Failed Instance Creation");
 }
 
-void Instance::Destroy()
+Instance::~Instance()
 {
     vkDestroyInstance(handle, nullptr);
     handle = VK_NULL_HANDLE;

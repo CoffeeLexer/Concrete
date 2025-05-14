@@ -8,29 +8,19 @@
 
 Scope::Scope()
 {
-    instance = new Instance(this);
-    instance->Create();
+    instance = new Instance(*this);
     physicalDevice = new PhysicalDevice(*this);
-    physicalDevice->Create();
-    window = new Window(this);
-    window->Create();
-    surface = new Surface(this);
-    surface->Create();
-    device = new Device(this);
-    device->Create();
+    window = new Window(*this);
+    surface = new Surface(*this);
+    device = new Device(*this);
 }
 
 Scope::~Scope()
 {
-    device->Destroy();
     delete device;
-    surface->Destroy();
     delete surface;
-    window->Destroy();
     delete window;
-    physicalDevice->Destroy();
     delete physicalDevice;
-    instance->Destroy();
     delete instance;
 }
 

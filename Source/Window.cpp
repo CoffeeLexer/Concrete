@@ -72,9 +72,7 @@ void GlobalTerminate()
     glfwTerminate();
 }
 
-Window::Window(Scope *scope) : scope(scope) {}
-
-void Window::Create()
+Window::Window(Scope &scope) : scope(scope)
 {
     GlobalInit();
 
@@ -89,7 +87,7 @@ void Window::Create()
     glfwSetFramebufferSizeCallback(handle, Callback::FramebufferSize);
 }
 
-void Window::Destroy()
+Window::~Window()
 {
     glfwDestroyWindow(handle);
     GlobalTerminate();

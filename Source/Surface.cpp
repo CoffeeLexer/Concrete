@@ -9,8 +9,6 @@ constexpr VkFormat priorities[] = {
     VK_FORMAT_R8G8B8A8_SRGB,
 };
 
-Surface::Surface(Scope *scope) : scope(scope) {}
-
 VkSurfaceFormatKHR Surface::selectBestFormat()
 {
     auto formats = GetFormats();
@@ -25,10 +23,10 @@ VkSurfaceFormatKHR Surface::selectBestFormat()
     return formats.at(0);
 }
 
-void Surface::Create()
+Surface::Surface(Scope &scope) : scope(scope)
 {
-    VkInstance instance = scope().getInstance().getHandle();
-    GLFWwindow *window = scope().getWindow().getHandle();
+    VkInstance instance = scope.getInstance().getHandle();
+    GLFWwindow *window = scope.getWindow().getHandle();
     VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &handle);
     if (result != VK_SUCCESS)
         panic("Couldn't create surface");
@@ -37,7 +35,7 @@ void Surface::Create()
 
 std::vector<VkSurfaceFormatKHR> Surface::GetFormats()
 {
-    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
+    VkPhysicalDevice physicalDevice = scope.getPhyDevice().getHandle();
     uint32_t count;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, handle, &count, nullptr);
     std::vector<VkSurfaceFormatKHR> formats;
@@ -46,15 +44,15 @@ std::vector<VkSurfaceFormatKHR> Surface::GetFormats()
     return formats;
 }
 
-void Surface::Destroy()
+Surface::~Surface()
 {
-    VkInstance instance = scope().getInstance().getHandle();
+    VkInstance instance = scope.getInstance().getHandle();
     vkDestroySurfaceKHR(instance, handle, nullptr);
 }
 
 VkSurfaceCapabilitiesKHR Surface::GetCaps()
 {
-    VkPhysicalDevice physicalDevice = scope().getPhyDevice().getHandle();
+    VkPhysicalDevice physicalDevice = scope.getPhyDevice().getHandle();
     VkSurfaceCapabilitiesKHR caps;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, handle, &caps);
     return caps;

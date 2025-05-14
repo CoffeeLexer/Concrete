@@ -16,6 +16,7 @@ class Scope
 public:
     Scope();
     ~Scope();
+
     Instance& getInstance();
     PhysicalDevice& getPhyDevice();
     Device& getDevice();

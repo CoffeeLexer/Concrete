@@ -9,16 +9,11 @@ class GLFWwindow;
 
 class Window : public Handle<GLFWwindow*>
 {
-    friend Scope::Scope(), Scope::~Scope();
-    ScopeLink scope;
+    Scope &scope;
     void *userData = nullptr;
-
-    explicit Window(Scope *scope);
-
-    void Create();
-    void Destroy();
 public:
-
+    explicit Window(Scope &scope);
+    ~Window();
 
     static void PollEvents();
     [[nodiscard]] bool IsValid() const;

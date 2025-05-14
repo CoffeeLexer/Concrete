@@ -1,30 +1,35 @@
-#include "PhysicalDevice.h"
+#include "Device.h"
 
 #include <limits>
 #include <vector>
 
 #include "Engine.h"
 
-PhysicalDevice::PhysicalDevice(Scope &scope) : Object(scope) {}
+struct Properties : public VkPhysicalDeviceProperties {
+    Properties(const VkPhysicalDevice &phyDev) {
+        vkGetPhysicalDeviceProperties(phyDev, this);
+    }
+};
 
-VkPhysicalDeviceProperties PhysicalDevice::Properties() const
-{
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(handle, &properties);
-    return properties;
-}
+struct Features : public VkPhysicalDeviceFeatures {
+    Features(const VkPhysicalDevice &phyDev) {
+        vkGetPhysicalDeviceFeatures(phyDev, this);
+    }
+};
 
-VkPhysicalDeviceFeatures PhysicalDevice::Features() const
-{
-    VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(handle, &features);
-    return features;
-}
+struct PhysicalDeviceVector : public std::vector<VkPhysicalDevice> {
+    PhysicalDeviceVector(const VkInstance &instance) {
+        uint32_t count;
+        vkEnumeratePhysicalDevices(instance, &count, nullptr);
+        this->resize(count);
+        vkEnumeratePhysicalDevices(instance, &count, this->data());
+    }
+};
 
-uint32_t PhysicalDevice::getRating() const
+uint32_t getRating(const VkPhysicalDevice &phyDevice) const
 {
-    const auto& properties = Properties();
-    const uint32_t limit = std::numeric_limits<uint32_t>::max();
+    const auto& properties = Properties{phyDevice};
+    constexpr uint32_t limit = std::numeric_limits<uint32_t>::max();
 
     switch(properties.deviceType)
     {
@@ -41,30 +46,20 @@ uint32_t PhysicalDevice::getRating() const
     }
 }
 
-void PhysicalDevice::Create() override
+VkPhysicalDevice Device::createPhysicalDevice() const
 {
-    const VkInstance &instance = scope().getInstance().getHandle();
-    uint32_t count;
-    std::vector<VkPhysicalDevice> devices;
-
-    vkEnumeratePhysicalDevices(instance, &count, nullptr);
-    devices.resize(count);
-    vkEnumeratePhysicalDevices(instance, &count, devices.data());
+    const VkInstance &instance = scope.getInstance().getHandle();
+    const auto devices = PhysicalDeviceVector{instance};
 
     uint32_t bestRating;
     VkPhysicalDevice bestDevice;
-    for (uint32_t i = 0; i < count; i++)
+    for (auto phyDevice : devices)
     {
-        handle = devices[i];
-        uint32_t rating = getRating();
-
-        if (bestRating < rating)
+        if (uint32_t rating = getRating(phyDevice); bestRating < rating)
         {
             bestRating = rating;
-            bestDevice = handle;
+            bestDevice = phyDevice;
         }
     }
-    handle = bestDevice;
+    return bestDevice;
 }
-
-void PhysicalDevice::Destroy() override {}

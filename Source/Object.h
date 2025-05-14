@@ -14,4 +14,3 @@ protected:
 public:
     Object(Scope &scope) : scope(scope) {}
 };
-

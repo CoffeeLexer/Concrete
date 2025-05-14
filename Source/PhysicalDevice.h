@@ -5,11 +5,9 @@
 #include "vulkan/vulkan.h"
 
 class PhysicalDevice final
-    : public Object
-    , public Handle<VkPhysicalDevice>
+    : public Handle<VkPhysicalDevice>
 {
-    void Create() override;
-    void Destroy() override;
+    Scope &scope;
 
     [[nodiscard]] uint32_t getRating() const;
 public:

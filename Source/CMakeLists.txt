@@ -49,6 +49,7 @@ set(SOURCES
     Scope.cpp
         Object.cpp
         Object.h
+        LogicalDevice.cpp
 )
 
 add_executable(${APP_NAME}
