@@ -43,12 +43,12 @@ Instance::Instance(Scope &scope) : scope(scope)
         .ppEnabledExtensionNames = extensions.data(),
     };
 
-    if (vkCreateInstance(&ci, nullptr, &handle) != VK_SUCCESS)
+    if (vkCreateInstance(&ci, nullptr, &instance) != VK_SUCCESS)
         panic("Failed Instance Creation");
 }
 
 Instance::~Instance()
 {
-    vkDestroyInstance(handle, nullptr);
-    handle = VK_NULL_HANDLE;
+    vkDestroyInstance(instance, nullptr);
+    instance = VK_NULL_HANDLE;
 }

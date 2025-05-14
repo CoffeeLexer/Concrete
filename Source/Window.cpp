@@ -1,51 +1,11 @@
 #include "Window.h"
 
-#include <cstdio>
-#include <cstdlib>
-
 #include "GLFW/glfw3.h"
 #include "Instance.h"
 #include "Engine.h"
 #include "Panic.h"
 
-uint32_t globalInstanceCount = 0;
-
-namespace Callback
-{
-    void Error(int err, const char* description);
-    void Key(GLFWwindow* window, int key, int scancode, int action, int mods);
-    void FramebufferSize(GLFWwindow *window, int width, int height);
-}
-
-struct UserData
-{
-    int width = 0;
-    int height = 0;
-};
-
-UserData& GetUserData(GLFWwindow *window)
-{
-    auto *ptr = glfwGetWindowUserPointer(window);
-    return *static_cast<UserData*>(ptr);
-}
-
-void Callback::Error(int err, const char* description)
-{
-    fprintf(stderr, "GLFW Error: %s\n", description);
-}
-
-void Callback::Key(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
-void Callback::FramebufferSize(GLFWwindow *window, const int width, const int height)
-{
-    auto &userData = GetUserData(window);
-    userData.width = width;
-    userData.height = height;
-}
+static uint32_t globalInstanceCount = 0;
 
 void GlobalInit()
 {
@@ -66,30 +26,41 @@ void GlobalInit()
 void GlobalTerminate()
 {
     globalInstanceCount--;
-
     if (globalInstanceCount > 0) return;
-
     glfwTerminate();
 }
 
 Window::Window(Scope &scope) : scope(scope)
 {
+    createWindow();
+    createSurface();
+}
+
+void Window::createWindow()
+{
     GlobalInit();
+    window = glfwCreateWindow(480, 480, "Concrete Window", nullptr, nullptr);
 
-    handle = glfwCreateWindow(480, 480, "Concrete Window", nullptr, nullptr);
-
-    if (!handle)
+    if (!window)
         panic("Failed GLFWwindow creation");
 
-    userData = new UserData;
-    glfwSetWindowUserPointer(handle, userData);
-    glfwSetKeyCallback(handle, Callback::Key);
-    glfwSetFramebufferSizeCallback(handle, Callback::FramebufferSize);
+    glfwSetWindowUserPointer(window, &userData);
+    glfwSetKeyCallback(window, Callback::Key);
+    glfwSetFramebufferSizeCallback(window, Callback::FramebufferSize);
 }
+
+void Window::createSurface()
+{
+    VkInstance instance = scope.getInstance().getInstance();
+    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+    if (result != VK_SUCCESS)
+        panic("Couldn't create surface");
+}
+
 
 Window::~Window()
 {
-    glfwDestroyWindow(handle);
+    glfwDestroyWindow(window);
     GlobalTerminate();
 }
 
@@ -100,5 +71,5 @@ void Window::PollEvents()
 
 bool Window::IsValid() const
 {
-    return !glfwWindowShouldClose(handle);
+    return !glfwWindowShouldClose(window);
 }

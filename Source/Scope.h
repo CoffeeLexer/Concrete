@@ -1,25 +1,21 @@
 #pragma once
 
+#include "Handle.h"
+
 class Instance;
-class PhysicalDevice;
-class Device;
 class Window;
-class Surface;
+class Device;
 
 class Scope
 {
     Instance *instance;
     Window *window;
-    Surface *surface;
-    PhysicalDevice *physicalDevice;
     Device *device;
 public:
     Scope();
     ~Scope();
 
-    Instance& getInstance();
-    PhysicalDevice& getPhyDevice();
-    Device& getDevice();
-    Window& getWindow();
-    Surface& getSurface();
+    Handle<Instance> getInstance{*instance};
+    Handle<Window> getWindow{*window};
+    Handle<Device> getDevice{*device};
 };

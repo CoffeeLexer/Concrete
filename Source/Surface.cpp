@@ -23,15 +23,6 @@ VkSurfaceFormatKHR Surface::selectBestFormat()
     return formats.at(0);
 }
 
-Surface::Surface(Scope &scope) : scope(scope)
-{
-    VkInstance instance = scope.getInstance().getHandle();
-    GLFWwindow *window = scope.getWindow().getHandle();
-    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &handle);
-    if (result != VK_SUCCESS)
-        panic("Couldn't create surface");
-    format = selectBestFormat();
-}
 
 std::vector<VkSurfaceFormatKHR> Surface::GetFormats()
 {

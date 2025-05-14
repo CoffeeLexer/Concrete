@@ -1,14 +1,16 @@
 #pragma once
 
 #include "Handle.h"
-#include "Scope.h"
-
 #include "vulkan/vulkan.h"
 
-class Instance : public Handle<VkInstance>
+class Scope;
+class Instance
 {
     Scope &scope;
+    VkInstance instance;
 public:
     explicit Instance(Scope &scope);
     ~Instance();
+
+    Handle<VkInstance> getVkInstance{instance};
 };

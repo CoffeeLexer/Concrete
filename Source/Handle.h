@@ -4,11 +4,11 @@ template<typename T>
 class Handle
 {
 protected:
-    T handle = T();
+    T &ref;
 public:
-    Handle() = default;
-    T getHandle()
+    explicit Handle(T &reference) : ref(reference) {}
+    const T& operator()()
     {
-        return handle;
+        return ref;
     }
 };
