@@ -28,10 +28,7 @@ struct SurfaceCaps : VkSurfaceCapabilitiesKHR {
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, this);
     }
 };
-constexpr VkFormat priorities[] = {
-    VK_FORMAT_R8G8B8A8_UNORM,
-    VK_FORMAT_R8G8B8A8_SRGB,
-};
+
 struct SurfaceFormats : std::vector<VkSurfaceFormatKHR> {
     SurfaceFormats(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
         uint32_t count;
@@ -41,34 +38,40 @@ struct SurfaceFormats : std::vector<VkSurfaceFormatKHR> {
     }
 };
 
-void Backbuffer::selectFormat()
+void Backbuffer::selectSurfaceFormat()
 {
-    auto formats = SurfaceFormats{scope.getDevice().getVkPhysicalDevice(), surface};
+    const VkFormat priorities[] = {
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_SRGB,
+    };
+
+    const auto formats = SurfaceFormats{scope.getDevice().getVkPhysicalDevice(), surface};
     for (const auto& p : priorities)
     {
         for (const auto& format : formats)
         {
             if (p == format.format)
-                return format;
+            {
+                surfaceFormat = format;
+                return;
+            }
         }
     }
-    return formats.at(0);
+    surfaceFormat = formats.at(0);
 }
 
-
-
-struct SurfacePresentModes : std::vector<VkPresentModeKHR> {
-    SurfacePresentModes(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
-        uint32_t count;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
-        this->resize(count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, this->data());
-    }
-};
+std::vector<VkPresentModeKHR> surfacePresentModes(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+    std::vector<VkPresentModeKHR> formats;
+    uint32_t count;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
+    formats.resize(count);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, formats.data());
+    return formats;
+}
 
 void Backbuffer::selectPresentMode()
 {
-    auto presentModes = SurfacePresentModes(scope.getDevice().getVkPhysicalDevice(), surface);
+    const auto presentModes = surfacePresentModes(scope.getDevice().getVkPhysicalDevice(), surface);
 
     const VkPresentModeKHR priorities[] = {
         VK_PRESENT_MODE_MAILBOX_KHR,
@@ -95,9 +98,12 @@ void Backbuffer::createSwapchain()
 {
     selectPresentMode();
     const auto caps = SurfaceCaps{scope.getDevice().getVkPhysicalDevice(), surface};
-    selectFormat();
-    scope.getWindow().
-    this->extent = caps.currentExtent;
+    selectSurfaceFormat();
+
+    const auto windowInfo = scope.getWindow().getInfo();
+    extent = {};
+    extent.width = windowInfo.width;
+    extent.height = windowInfo.height;
 
     imageCount = 3;
     imageCount = std::max(imageCount, caps.minImageCount);
@@ -110,13 +116,13 @@ void Backbuffer::createSwapchain()
         .flags = 0,
         .surface = surface,
         .minImageCount = imageCount,
-        .imageFormat = this->format,
-        .imageColorSpace = ,
-        .imageExtent = this->extent,
+        .imageFormat = surfaceFormat.format,
+        .imageColorSpace = surfaceFormat.colorSpace,
+        .imageExtent = extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-        .compositeAlpha = 0,
+        .compositeAlpha = (VkCompositeAlphaFlagBitsKHR)0,
         .presentMode = presentMode,
         .clipped = VK_TRUE,
         .oldSwapchain = nullptr,
@@ -140,7 +146,7 @@ void Backbuffer::createSwapchain()
         ci.pQueueFamilyIndices = queueIndices;
     }
 
-    VkDevice device = scope.getDevice().getVkDevice();
+    const auto device = scope.getDevice().getVkDevice();
     VkResult result = vkCreateSwapchainKHR(device, &ci, nullptr, &swapchain);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed creating swapchain");
@@ -160,7 +166,7 @@ void Backbuffer::createSwapchain()
 
 Backbuffer::~Backbuffer()
 {
-    VkDevice device = Owner().device;
+    const auto device = scope.getDevice().getVkDevice();
     delete renderPass;
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }

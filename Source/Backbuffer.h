@@ -2,8 +2,17 @@
 
 #include "vulkan/vulkan.h"
 #include "Handle.h"
-#include "RenderPass.h"
 #include <vector>
+
+struct Frame {
+    VkImageView imageView           = VK_NULL_HANDLE;
+    VkImage image                   = VK_NULL_HANDLE;
+    VkFramebuffer framebuffer       = VK_NULL_HANDLE;
+    VkSemaphore renderSemaphore     = VK_NULL_HANDLE;
+    VkSemaphore imageSemaphore      = VK_NULL_HANDLE;
+    VkCommandBuffer commandBuffer   = VK_NULL_HANDLE;
+    VkFence renderFence             = VK_NULL_HANDLE;
+};
 
 class Scope;
 class Backbuffer
@@ -11,56 +20,34 @@ class Backbuffer
     Scope &scope;
 
     VkSurfaceKHR surface;
-    void createSurface();
-    void createSwapchain();
 
     VkSwapchainKHR swapchain;
     VkPresentModeKHR presentMode;
-    RenderPass *renderPass;
 
     void selectPresentMode();
+    void selectSurfaceFormat();
 
-
-    VkFormat format;
-    VkColorSpaceKHR colorSpace;
+    VkSurfaceFormatKHR surfaceFormat;
 
     VkExtent2D extent;
     VkCommandPool commandPool;
     uint32_t imageCount;
     uint32_t currentImage;
 
-    std::vector<VkImageView> imageViews;
-    std::vector<VkImage> images;
-    std::vector<VkFramebuffer> framebuffers;
-    std::vector<VkSemaphore> renderSemaphores;
-    std::vector<VkSemaphore> imageSemaphores;
-    std::vector<VkCommandBuffer> commandBuffers;
-    std::vector<VkFence> renderFences;
+    std::vector<Frame> frames;
 
-    VkPresentModeKHR GetBestPresentMode();
-    VkSurfaceFormatKHR GetBestSurfaceFormat();
-    VkSurfaceCapabilitiesKHR GetSurfaceCaps();
-    void CreateImageViews();
-    void CreateFramebuffers();
-    void CreateSemaphores();
-    void CreateFences();
-    void AllocateCommandPool();
+    void createSurface();
+    void createSwapchain();
+    void createImageViews();
+    void createFramebuffers();
+    void createSemaphores();
+    void createFences();
+    void allocateCommandPool();
 
 public:
     Backbuffer(Scope &scope);
     ~Backbuffer();
 
-        Handle<VkSwapchainKHR> getSwapchain{swapchain};
+    Handle<VkSwapchainKHR> getSwapchain{swapchain};
     Handle<VkSurfaceKHR> getSurface{surface};
-
-    VkFormat GetFormat();
-    VkRenderPass GetRenderPass();
-    uint32_t GetImageCount();
-    VkFramebuffer GetFramebuffer(uint32_t i);
-    VkImageView GetView(uint32_t i);
-
-    void GetFramebuffer();
-    VkExtent2D GetExtent();
-    void Draw();
-    uint32_t GetIndex();
 };
