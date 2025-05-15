@@ -22,6 +22,41 @@ void Backbuffer::createSurface()
         panic("Couldn't create surface");
 }
 
+
+struct SurfaceCaps : VkSurfaceCapabilitiesKHR {
+    SurfaceCaps(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, this);
+    }
+};
+constexpr VkFormat priorities[] = {
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_SRGB,
+};
+struct SurfaceFormats : std::vector<VkSurfaceFormatKHR> {
+    SurfaceFormats(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+        uint32_t count;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
+        this->resize(count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, this->data());
+    }
+};
+
+void Backbuffer::selectFormat()
+{
+    auto formats = SurfaceFormats{scope.getDevice().getVkPhysicalDevice(), surface};
+    for (const auto& p : priorities)
+    {
+        for (const auto& format : formats)
+        {
+            if (p == format.format)
+                return format;
+        }
+    }
+    return formats.at(0);
+}
+
+
+
 struct SurfacePresentModes : std::vector<VkPresentModeKHR> {
     SurfacePresentModes(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
         uint32_t count;
@@ -31,7 +66,7 @@ struct SurfacePresentModes : std::vector<VkPresentModeKHR> {
     }
 };
 
-VkPresentModeKHR Backbuffer::GetBestPresentMode()
+void Backbuffer::selectPresentMode()
 {
     auto presentModes = SurfacePresentModes(scope.getDevice().getVkPhysicalDevice(), surface);
 
@@ -47,59 +82,52 @@ VkPresentModeKHR Backbuffer::GetBestPresentMode()
         for (uint32_t i = 0; i < presentModes.size(); i++)
         {
             if (p == presentModes.at(i))
-                return p;
+            {
+                presentMode = p;
+                return;
+            }
         }
     }
-    return presentModes.at(0);
+    presentMode = presentModes.at(0);
 }
 
-VkFormat Backbuffer::GetFormat()
+void Backbuffer::createSwapchain()
 {
-    return this->format;
-}
-
-void Backbuffer::Create()
-{
-    VkPresentModeKHR presentMode = GetBestPresentMode();
-    Surface &surface = scope().getSurface();
-    const auto caps = surface.GetCaps();
-    VkSurfaceFormatKHR format = surface.GetBestFormat();
-    this->format = format.format;
+    selectPresentMode();
+    const auto caps = SurfaceCaps{scope.getDevice().getVkPhysicalDevice(), surface};
+    selectFormat();
+    scope.getWindow().
     this->extent = caps.currentExtent;
 
     imageCount = 3;
     imageCount = std::max(imageCount, caps.minImageCount);
     if (caps.maxImageCount) // 0 => no limit
-    {
         imageCount = std::min(imageCount, caps.maxImageCount);
-    }
 
     VkSwapchainCreateInfoKHR ci = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,
         .flags = 0,
         .surface = surface,
-        .minImageCount = caps.minImageCount,
+        .minImageCount = imageCount,
         .imageFormat = this->format,
-        .imageColorSpace = format.colorSpace,
+        .imageColorSpace = ,
         .imageExtent = this->extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+        .compositeAlpha = 0,
         .presentMode = presentMode,
         .clipped = VK_TRUE,
         .oldSwapchain = nullptr,
     };
 
-    ci.compositeAlpha = static_cast<VkCompositeAlphaFlagBitsKHR>(
-        caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
-    
-    Device &deviceWrapper = Owner().device;
-    uint32_t graphicsIndex = deviceWrapper.GetGraphicsIndex();
-    uint32_t presentIndex = deviceWrapper.GetPresentIndex();
+    const auto &queues = scope.getDevice().getQueues();
+    uint32_t graphicsIndex = queues.graphics.index;
+    uint32_t presentIndex = queues.present.index;
     uint32_t queueIndices[] = {graphicsIndex, presentIndex};
 
-    if (graphicsIndex == presentIndex)
+    if (queues.sameFamily())
     {
         ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         ci.queueFamilyIndexCount = 0;
@@ -112,16 +140,14 @@ void Backbuffer::Create()
         ci.pQueueFamilyIndices = queueIndices;
     }
 
-    VkDevice device = deviceWrapper;
-    VkResult result = vkCreateSwapchainKHR(device, &ci, nullptr, &handle);
+    VkDevice device = scope.getDevice().getVkDevice();
+    VkResult result = vkCreateSwapchainKHR(device, &ci, nullptr, &swapchain);
     if (result != VK_SUCCESS)
-    {
         throw std::runtime_error("Failed creating swapchain");
-    }
 
-    vkGetSwapchainImagesKHR(device, handle, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
     images.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, handle, &imageCount, images.data());
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
 
     renderPass = new RenderPass(owner);
 
@@ -136,7 +162,7 @@ Backbuffer::~Backbuffer()
 {
     VkDevice device = Owner().device;
     delete renderPass;
-    vkDestroySwapchainKHR(device, handle, nullptr);
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
 void Backbuffer::CreateImageViews()
@@ -284,11 +310,6 @@ void Backbuffer::Draw()
             .float32 = {1.0f, 0.0f, 1.0f, 1.0f},
         },
     };
-
-    // ui.Start();
-    // ImGui::ShowDemoWindow();
-    // ui.End(commandBuffer, extent);
-
     VkRect2D renderArea = {
         .offset = VkOffset2D {0, 0},
         .extent = extent,
@@ -422,7 +443,7 @@ void Backbuffer::CreateSemaphores()
         status = vkCreateSemaphore(device, &ci, nullptr, &imageSemaphores[i]);
         if (status != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed semaphore creation (availible)");
+            throw std::runtime_error("Failed semaphore creation (available)");
         }
     }
 }

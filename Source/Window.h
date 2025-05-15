@@ -5,7 +5,7 @@
 
 class GLFWwindow;
 class Scope;
-struct UserData
+struct Info
 {
     int width = 0;
     int height = 0;
@@ -15,7 +15,7 @@ class Window
 {
     Scope &scope;
     GLFWwindow *window;
-    UserData userData = {};
+    Info userData = {};
 
     void createWindow();
 public:
@@ -23,6 +23,7 @@ public:
     ~Window();
 
     Handle<GLFWwindow*> getWindow{window};
+    Handle<Info> getInfo{userData};
 
     static void PollEvents();
     [[nodiscard]] bool IsValid() const;

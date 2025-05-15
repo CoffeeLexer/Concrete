@@ -3,10 +3,10 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 
-UserData& GetUserData(GLFWwindow *window)
+Info& GetUserData(GLFWwindow *window)
 {
     auto *ptr = glfwGetWindowUserPointer(window);
-    return *static_cast<UserData*>(ptr);
+    return *static_cast<Info*>(ptr);
 }
 
 void Callback::Error(int err, const char* description)

@@ -8,6 +8,7 @@ Scope::Scope()
     : instance(*this)
     , window(*this)
     , device(*this)
+    , backbuffer(*this)
 {}
 
 Scope::~Scope() {}

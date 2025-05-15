@@ -10,16 +10,20 @@ class Backbuffer
 {
     Scope &scope;
 
-    VkSwapchainKHR swapchain;
     VkSurfaceKHR surface;
-
     void createSurface();
+    void createSwapchain();
 
-
-
+    VkSwapchainKHR swapchain;
+    VkPresentModeKHR presentMode;
     RenderPass *renderPass;
 
+    void selectPresentMode();
+
+
     VkFormat format;
+    VkColorSpaceKHR colorSpace;
+
     VkExtent2D extent;
     VkCommandPool commandPool;
     uint32_t imageCount;
