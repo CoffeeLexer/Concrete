@@ -1,8 +1,8 @@
+#include <stdexcept>
 #include "Window.h"
 
 #include "GLFW/glfw3.h"
-#include "Instance.h"
-#include "Engine.h"
+#include "Scope.h"
 #include "Panic.h"
 
 static uint32_t globalInstanceCount = 0;
@@ -33,6 +33,7 @@ void GlobalTerminate()
 Window::Window(Scope &scope) : scope(scope)
 {
     createWindow();
+    createSurface();
 }
 
 void Window::createWindow()
@@ -52,6 +53,8 @@ void Window::createWindow()
 
 Window::~Window()
 {
+    const auto instance = scope.getInstance().getVkInstance();
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     glfwDestroyWindow(window);
     GlobalTerminate();
 }
@@ -64,4 +67,13 @@ void Window::PollEvents()
 bool Window::IsValid() const
 {
     return !glfwWindowShouldClose(window);
+}
+
+
+void Window::createSurface()
+{
+    const auto instance = scope.getInstance().getVkInstance();
+    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("VkSurface::Create: Failed");
 }

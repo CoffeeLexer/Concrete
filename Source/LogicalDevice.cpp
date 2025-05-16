@@ -41,7 +41,7 @@ namespace Support {
 
 Queues Device::selectQueueFamilies()
 {
-    auto presentSupport = PresentSupportList{physicalDevice, scope.getWindow().getSurface()};
+    auto presentSupport = PresentSupportList{physicalDevice, scope.getWindow().getVkSurface()};
     auto queueFamilyProperties = QueueFamilyProperties{physicalDevice};
 
     std::vector<int> candidates(presentSupport.size(), Support::None);
@@ -98,7 +98,7 @@ Queues Device::selectQueueFamilies()
     return queuesCandidate;
 }
 
-VkDevice Device::createLogicalDevice()
+void Device::createLogicalDevice()
 {
     constexpr float priorities[] = {1.0f, 1.0f};
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = {};

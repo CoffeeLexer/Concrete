@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Handle.h"
 #include "vulkan/vulkan.h"
 
 class Scope;
@@ -11,6 +10,8 @@ class Instance
 public:
     explicit Instance(Scope &scope);
     ~Instance();
+    Instance(const Instance&) = delete;
+    Instance& operator=(const Instance&) = delete;
 
-    Handle<VkInstance> getVkInstance{instance};
+    const VkInstance& getVkInstance() { return instance; }
 };

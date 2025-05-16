@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Handle.h"
 #include "Instance.h"
 #include "Window.h"
 #include "Device.h"
@@ -16,8 +15,8 @@ public:
     Scope();
     ~Scope();
 
-    Handle<Instance> getInstance{instance};
-    Handle<Window> getWindow{window};
-    Handle<Device> getDevice{device};
-    Handle<Backbuffer> getBackbuffer{backbuffer};
+    Instance& getInstance() { return instance; }
+    Window& getWindow() { return window; }
+    Device& getDevice() { return device; }
+    Backbuffer& getBackbuffer() { return backbuffer; }
 };

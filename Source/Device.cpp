@@ -1,17 +1,12 @@
 #include "Device.h"
 
-#include "Engine.h"
-#include "Panic.h"
-
-#include <vector>
-
-
+#include "Scope.h"
 
 Device::Device(Scope &scope) : scope(scope)
 {
-    physicalDevice = createPhysicalDevice();
+    createPhysicalDevice();
     selectQueueFamilies();
-    logicalDevice = createLogicalDevice();
+    createLogicalDevice();
 }
 
 Device::~Device()

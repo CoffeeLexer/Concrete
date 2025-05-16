@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Handle.h"
 #include <vulkan/vulkan.h>
 
 class GLFWwindow;
@@ -15,15 +14,21 @@ class Window
 {
     Scope &scope;
     GLFWwindow *window;
+    VkSurfaceKHR surface;
     Info userData = {};
 
     void createWindow();
+    void createSurface();
+
 public:
     explicit Window(Scope &scope);
     ~Window();
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
 
-    Handle<GLFWwindow*> getWindow{window};
-    Handle<Info> getInfo{userData};
+    const GLFWwindow* getWindow() { return window; }
+    const VkSurfaceKHR& getVkSurface() { return surface; }
+    const Info& getInfo() { return userData; }
 
     static void PollEvents();
     [[nodiscard]] bool IsValid() const;

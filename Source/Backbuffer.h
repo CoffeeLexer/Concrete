@@ -1,7 +1,6 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
-#include "Handle.h"
 #include <vector>
 
 struct Frame {
@@ -19,7 +18,6 @@ class Backbuffer
 {
     Scope &scope;
 
-    VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
     VkPresentModeKHR presentMode;
     VkRenderPass renderPass;
@@ -31,27 +29,31 @@ class Backbuffer
     uint32_t imageCount = 3;
     uint32_t currentImage = 0;
 
-
     void selectPresentMode();
     void selectSurfaceFormat();
 
-    void createSurface();
     void createSwapchain();
     void createImages();
     void createImageViews();
     void createRenderPass();
-
     void createFramebuffers();
     void createSemaphores();
     void createFences();
     void allocateCommandPool();
 
+    void destroySwapchain();
+    void destroyImages();
+    void destroyImageViews();
+    void destroyRenderPass();
+    void destroyFramebuffers();
+    void destroySemaphores();
+    void deallocateCommandPool();
+    void destroyFences();
+
 public:
     Backbuffer(Scope &scope);
     ~Backbuffer();
-
+    Backbuffer(const Backbuffer&) = delete;
+    Backbuffer& operator=(const Backbuffer&) = delete;
     void draw();
-
-    Handle<VkSwapchainKHR> getSwapchain{swapchain};
-    Handle<VkSurfaceKHR> getSurface{surface};
 };

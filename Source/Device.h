@@ -5,8 +5,6 @@
 #include "vulkan/vulkan.h"
 #include <vector>
 
-#include "Handle.h"
-
 struct Queue
 {
     VkQueue queue = VK_NULL_HANDLE;
@@ -32,13 +30,15 @@ class Device
     Queues queues;
 
     Queues selectQueueFamilies();
-    VkPhysicalDevice createPhysicalDevice();
-    VkDevice createLogicalDevice();
+    void createPhysicalDevice();
+    void createLogicalDevice();
 public:
     explicit Device(Scope &scope);
     ~Device();
+    Device(const Device&) = delete;
+    Device& operator=(const Device&) = delete;
 
-    Handle<Queues> getQueues{queues};
-    Handle<VkPhysicalDevice> getVkPhysicalDevice{physicalDevice};
-    Handle<VkDevice> getVkDevice{logicalDevice};
+    const Queues& getQueues() { return queues; }
+    const VkPhysicalDevice& getVkPhysicalDevice() { return physicalDevice; }
+    const VkDevice& getVkDevice() { return logicalDevice; }
 };

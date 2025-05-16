@@ -8,20 +8,13 @@ struct Properties : public VkPhysicalDeviceProperties {
     }
 };
 
-// struct Features : public VkPhysicalDeviceFeatures {
-//     Features(const VkPhysicalDevice &phyDev) {
-//         vkGetPhysicalDeviceFeatures(phyDev, this);
-//     }
-// };
-
-struct PhysicalDeviceVector : public std::vector<VkPhysicalDevice> {
-    PhysicalDeviceVector(const VkInstance &instance) {
-        uint32_t count;
-        vkEnumeratePhysicalDevices(instance, &count, nullptr);
-        this->resize(count);
-        vkEnumeratePhysicalDevices(instance, &count, this->data());
-    }
-};
+std::vector<VkPhysicalDevice> physicalDeviceVector(const VkInstance instance) {
+    uint32_t count;
+    vkEnumeratePhysicalDevices(instance, &count, nullptr);
+    std::vector<VkPhysicalDevice> physicalDevice{count};
+    vkEnumeratePhysicalDevices(instance, &count, physicalDevice.data());
+    return physicalDevice;
+}
 
 uint32_t rate(const VkPhysicalDevice physicalDevice) {
     const auto properties = Properties{physicalDevice};
@@ -41,10 +34,10 @@ uint32_t rate(const VkPhysicalDevice physicalDevice) {
 }
 
 
-VkPhysicalDevice Device::createPhysicalDevice()
+void Device::createPhysicalDevice()
 {
     const auto instance = scope.getInstance().getVkInstance();
-    const auto devices = PhysicalDeviceVector{instance};
+    const auto devices = physicalDeviceVector(instance);
 
     uint32_t bestRating;
     VkPhysicalDevice bestDevice;
@@ -57,5 +50,5 @@ VkPhysicalDevice Device::createPhysicalDevice()
             bestDevice = phyDevice;
         }
     }
-    return bestDevice;
+    physicalDevice = bestDevice;
 }

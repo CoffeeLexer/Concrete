@@ -13,8 +13,6 @@ Backbuffer::Backbuffer(Scope &scope) : scope(scope)
 {
     imageCount = 3;
 
-
-    createSurface();
     createSwapchain();
 
     frames.resize(imageCount);
@@ -28,6 +26,23 @@ Backbuffer::Backbuffer(Scope &scope) : scope(scope)
     createFences();
 
     allocateCommandPool();
+}
+Backbuffer::~Backbuffer()
+{
+    deallocateCommandPool();
+    destroyFences();
+    destroySemaphores();
+    destroyFramebuffers();
+    destroyRenderPass();
+    destroyImageViews();
+    destroyImages();
+    destroySwapchain();
+}
+
+void Backbuffer::destroyRenderPass()
+{
+    const auto device = scope.getDevice().getVkDevice();
+    vkDestroyRenderPass(device, renderPass, nullptr);
 }
 
 void Backbuffer::createRenderPass()
@@ -79,6 +94,10 @@ void Backbuffer::createRenderPass()
     if (status != VK_SUCCESS)
         throw std::runtime_error("RenderPass::Create Failed");
 }
+void Backbuffer::destroyImages()
+{
+    // vkDestroySwapchain handles this
+}
 
 void Backbuffer::createImages()
 {
@@ -96,14 +115,6 @@ void Backbuffer::createImages()
     }
 }
 
-void Backbuffer::createSurface()
-{
-    const auto instance = scope.getInstance().getVkInstance();
-    const auto window = scope.getWindow().getWindow();
-    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("VkSurface::Create: Failed");
-}
 
 
 struct SurfaceCaps : VkSurfaceCapabilitiesKHR {
@@ -128,7 +139,7 @@ void Backbuffer::selectSurfaceFormat()
         VK_FORMAT_R8G8B8A8_SRGB,
     };
 
-    const auto formats = SurfaceFormats{scope.getDevice().getVkPhysicalDevice(), surface};
+    const auto formats = SurfaceFormats{scope.getDevice().getVkPhysicalDevice(), scope.getWindow().getVkSurface()};
     for (const auto& p : priorities)
     {
         for (const auto& format : formats)
@@ -154,7 +165,7 @@ std::vector<VkPresentModeKHR> surfacePresentModes(const VkPhysicalDevice physica
 
 void Backbuffer::selectPresentMode()
 {
-    const auto presentModes = surfacePresentModes(scope.getDevice().getVkPhysicalDevice(), surface);
+    const auto presentModes = surfacePresentModes(scope.getDevice().getVkPhysicalDevice(), scope.getWindow().getVkSurface());
 
     const VkPresentModeKHR priorities[] = {
         VK_PRESENT_MODE_MAILBOX_KHR,
@@ -177,10 +188,16 @@ void Backbuffer::selectPresentMode()
     presentMode = presentModes.at(0);
 }
 
+void Backbuffer::destroySwapchain()
+{
+    const auto device = scope.getDevice().getVkDevice();
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
+}
+
 void Backbuffer::createSwapchain()
 {
     selectPresentMode();
-    const auto caps = SurfaceCaps{scope.getDevice().getVkPhysicalDevice(), surface};
+    const auto caps = SurfaceCaps{scope.getDevice().getVkPhysicalDevice(), scope.getWindow().getVkSurface()};
     selectSurfaceFormat();
 
     const auto windowInfo = scope.getWindow().getInfo();
@@ -197,7 +214,7 @@ void Backbuffer::createSwapchain()
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,
         .flags = 0,
-        .surface = surface,
+        .surface = scope.getWindow().getVkSurface(),
         .minImageCount = imageCount,
         .imageFormat = surfaceFormat.format,
         .imageColorSpace = surfaceFormat.colorSpace,
@@ -205,7 +222,7 @@ void Backbuffer::createSwapchain()
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-        .compositeAlpha = (VkCompositeAlphaFlagBitsKHR)0,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = presentMode,
         .clipped = VK_TRUE,
         .oldSwapchain = nullptr,
@@ -237,10 +254,11 @@ void Backbuffer::createSwapchain()
     vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
 }
 
-Backbuffer::~Backbuffer()
+void Backbuffer::destroyImageViews()
 {
     const auto device = scope.getDevice().getVkDevice();
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    for(auto& frame : frames)
+        vkDestroyImageView(device, frame.imageView, nullptr);
 }
 
 void Backbuffer::createImageViews()
@@ -277,6 +295,14 @@ void Backbuffer::createImageViews()
     }
 }
 
+void Backbuffer::destroyFences()
+{
+    const auto device = scope.getDevice().getVkDevice();
+
+    for(auto& frame : frames)
+        vkDestroyFence(device, frame.renderFence, nullptr);
+}
+
 void Backbuffer::createFences()
 {
     VkDevice device = scope.getDevice().getVkDevice();
@@ -292,6 +318,13 @@ void Backbuffer::createFences()
         if (status != VK_SUCCESS)
             throw std::runtime_error("Failed fence create");
     }
+}
+
+void Backbuffer::destroyFramebuffers()
+{
+    const auto device = scope.getDevice().getVkDevice();
+    for(auto& frame : frames)
+        vkDestroyFramebuffer(device, frame.framebuffer, nullptr);
 }
 
 void Backbuffer::createFramebuffers()
@@ -319,6 +352,12 @@ void Backbuffer::createFramebuffers()
         if (status != VK_SUCCESS)
             throw std::runtime_error("Failed framebuffers create");
     }
+}
+
+void Backbuffer::deallocateCommandPool()
+{
+    const auto device = scope.getDevice().getVkDevice();
+    vkDestroyCommandPool(device, commandPool, nullptr);
 }
 
 void Backbuffer::allocateCommandPool()
@@ -476,6 +515,16 @@ void Backbuffer::draw()
         throw std::runtime_error("Failed queue present");
 
     currentImage = ++currentImage % imageCount;
+}
+
+void Backbuffer::destroySemaphores()
+{
+    const auto device = scope.getDevice().getVkDevice();
+    for(auto& frame : frames)
+    {
+        vkDestroySemaphore(device, frame.renderSemaphore, nullptr);
+        vkDestroySemaphore(device, frame.imageSemaphore, nullptr);
+    }
 }
 
 void Backbuffer::createSemaphores()

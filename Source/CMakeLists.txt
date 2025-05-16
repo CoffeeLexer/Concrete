@@ -37,6 +37,8 @@ set(SOURCES
     Instance.cpp
     PhysicalDevice.cpp
     Window.cpp
+    WindowCallbacks.cpp
+    Backbuffer.cpp
     Panic.cpp
     Scope.cpp
     LogicalDevice.cpp
