@@ -4,13 +4,96 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
+#include <cassert>
 
 #include "Scope.h"
 #include "GLFW/glfw3.h"
 
 Backbuffer::Backbuffer(Scope &scope) : scope(scope)
 {
+    imageCount = 3;
+
+
     createSurface();
+    createSwapchain();
+
+    frames.resize(imageCount);
+
+    createImages();
+    createImageViews();
+    createRenderPass();
+    createFramebuffers();
+
+    createSemaphores();
+    createFences();
+
+    allocateCommandPool();
+}
+
+void Backbuffer::createRenderPass()
+{
+    VkAttachmentDescription attachment = {
+        .flags = 0,
+        .format = surfaceFormat.format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, // backbuffer
+    };
+
+    VkAttachmentReference color_attachment_ref = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkSubpassDescription subpass = {
+        .flags = 0,
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .inputAttachmentCount = 0,
+        .pInputAttachments = nullptr,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &color_attachment_ref,
+        .pResolveAttachments = nullptr,
+        .pDepthStencilAttachment = nullptr,
+        .preserveAttachmentCount = 0,
+        .pPreserveAttachments = nullptr,
+    };
+
+    VkRenderPassCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .attachmentCount = 1,
+        .pAttachments = &attachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 0,
+        .pDependencies = nullptr,
+    };
+
+    VkDevice device = scope.getDevice().getVkDevice();
+    VkResult status = vkCreateRenderPass(device, &ci, nullptr, &renderPass);
+    if (status != VK_SUCCESS)
+        throw std::runtime_error("RenderPass::Create Failed");
+}
+
+void Backbuffer::createImages()
+{
+    const auto device = scope.getDevice().getVkDevice();
+    std::vector<VkImage> images{frames.size()};
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
+
+    auto it = frames.begin();
+    auto it_img = images.begin();
+    while (it != frames.end() && it_img != images.end())
+    {
+        it->image = *it_img;
+        ++it;
+        ++it_img;
+    }
 }
 
 void Backbuffer::createSurface()
@@ -19,7 +102,7 @@ void Backbuffer::createSurface()
     const auto window = scope.getWindow().getWindow();
     VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
     if (result != VK_SUCCESS)
-        panic("Couldn't create surface");
+        throw std::runtime_error("VkSurface::Create: Failed");
 }
 
 
@@ -105,7 +188,7 @@ void Backbuffer::createSwapchain()
     extent.width = windowInfo.width;
     extent.height = windowInfo.height;
 
-    imageCount = 3;
+    assert(imageCount);
     imageCount = std::max(imageCount, caps.minImageCount);
     if (caps.maxImageCount) // 0 => no limit
         imageCount = std::min(imageCount, caps.maxImageCount);
@@ -152,40 +235,27 @@ void Backbuffer::createSwapchain()
         throw std::runtime_error("Failed creating swapchain");
 
     vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
-    images.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, images.data());
-
-    renderPass = new RenderPass(owner);
-
-    CreateImageViews();
-    CreateFramebuffers();
-    CreateSemaphores();
-    AllocateCommandPool();
-    CreateFences();
 }
 
 Backbuffer::~Backbuffer()
 {
     const auto device = scope.getDevice().getVkDevice();
-    delete renderPass;
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
-void Backbuffer::CreateImageViews()
+void Backbuffer::createImageViews()
 {
-    imageViews.resize(imageCount);
+    VkDevice device = scope.getDevice().getVkDevice();
 
-    VkDevice device = Owner().device;
-
-    for (uint32_t i = 0; i < imageViews.size(); i++)
+    for (auto& frame : frames)
     {
         VkImageViewCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .image = images[i],
+            .image = frame.image,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = format,
+            .format = surfaceFormat.format,
             .components = VkComponentMapping {
                 .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -201,51 +271,43 @@ void Backbuffer::CreateImageViews()
             },
         };
 
-        VkResult status = vkCreateImageView(device, &ci, nullptr, &imageViews[i]);
+        VkResult status = vkCreateImageView(device, &ci, nullptr, &frame.imageView);
         if (status != VK_SUCCESS)
-        {
             throw std::runtime_error("Failed swapchain image view");
-        }
     }
 }
 
-void Backbuffer::CreateFences()
+void Backbuffer::createFences()
 {
-    renderFences.resize(imageCount);
-
-    VkDevice device = Owner().device;
+    VkDevice device = scope.getDevice().getVkDevice();
     VkFenceCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT,
     };
 
-    for (uint32_t i = 0; i < imageCount; i++)
+    for (auto &frame : frames)
     {
-        VkResult status = vkCreateFence(device, &ci, nullptr, &renderFences[i]);
+        VkResult status = vkCreateFence(device, &ci, nullptr, &frame.renderFence);
         if (status != VK_SUCCESS)
-        {
             throw std::runtime_error("Failed fence create");
-        }
     }
 }
 
-void Backbuffer::CreateFramebuffers()
+void Backbuffer::createFramebuffers()
 {
-    framebuffers.resize(imageCount);
-
-    VkDevice device = Owner().device;
-    for (uint32_t i = 0; i < imageCount; i++)
+    const auto device = scope.getDevice().getVkDevice();
+    for (auto &frame : frames)
     {
         VkImageView attachments[] = {
-            imageViews[i],
+            frame.imageView
         };
 
         VkFramebufferCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .renderPass = *renderPass,
+            .renderPass = renderPass,
             .attachmentCount = 1,
             .pAttachments = attachments,
             .width = extent.width,
@@ -253,16 +315,13 @@ void Backbuffer::CreateFramebuffers()
             .layers = 1,
         };
 
-        VkResult status = vkCreateFramebuffer(device, &ci, nullptr, &framebuffers[i]);
+        VkResult status = vkCreateFramebuffer(device, &ci, nullptr, &frame.framebuffer);
         if (status != VK_SUCCESS)
-        {
             throw std::runtime_error("Failed framebuffers create");
-        }
     }
-
 }
 
-void Backbuffer::AllocateCommandPool()
+void Backbuffer::allocateCommandPool()
 {
     VkCommandPoolCreateInfo pool_ci = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -271,7 +330,7 @@ void Backbuffer::AllocateCommandPool()
         .queueFamilyIndex = 0,
     };
 
-    VkDevice device = Owner().device;
+    VkDevice device = scope.getDevice().getVkDevice();
     vkCreateCommandPool(device, &pool_ci, nullptr, &commandPool);
 
     VkCommandBufferAllocateInfo ai = {
@@ -282,19 +341,31 @@ void Backbuffer::AllocateCommandPool()
         .commandBufferCount = imageCount,
     };
 
-    commandBuffers.resize(imageCount);
-    vkAllocateCommandBuffers(device, &ai, commandBuffers.data());
+    std::vector<VkCommandBuffer> buffers{frames.size()};
+    vkAllocateCommandBuffers(device, &ai, buffers.data());
+
+    auto it = frames.begin();
+    auto it_buf = buffers.begin();
+    while (it != frames.end() && it_buf != buffers.end())
+    {
+        it->commandBuffer = *it_buf;
+        ++it;
+        ++it_buf;
+    }
 }
 
-void Backbuffer::Draw()
+void Backbuffer::draw()
 {
     // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    Device &device = Owner().device;
-    VkFramebuffer &framebuffer = framebuffers[currentImage];
-    VkFence &fence = renderFences[currentImage];
-    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
+    Frame frame = frames[currentImage];
+
+
+//    VkFramebuffer &framebuffer = framebuffers[currentImage];
+//    VkFence &fence = renderFences[currentImage];
+    VkDevice device = scope.getDevice().getVkDevice();
+    vkWaitForFences(device, 1, &frame.renderFence, VK_TRUE, UINT64_MAX);
     // vkDeviceWaitIdle(device);
-    VkCommandBuffer &commandBuffer = commandBuffers[currentImage];
+
     // vkResetCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
     VkCommandBufferBeginInfo beginInfo = {
@@ -305,12 +376,12 @@ void Backbuffer::Draw()
     };
 
     uint32_t imageIndex;
-    VkResult status = vkAcquireNextImageKHR(device, handle, UINT64_MAX,
-        imageSemaphores[currentImage], nullptr, &imageIndex);
+    VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+        frame.imageSemaphore, nullptr, &imageIndex);
 
-    vkResetFences(device, 1, &fence);
+    vkResetFences(device, 1, &frame.renderFence);
 
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    vkBeginCommandBuffer(frame.commandBuffer, &beginInfo);
     VkClearValue clearValue = {
         .color = VkClearColorValue {
             .float32 = {1.0f, 0.0f, 1.0f, 1.0f},
@@ -324,16 +395,16 @@ void Backbuffer::Draw()
     VkRenderPassBeginInfo renderPassBegin = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .pNext = nullptr,
-        .renderPass = *renderPass,
-        .framebuffer = framebuffers[currentImage],
+        .renderPass = renderPass,
+        .framebuffer = frame.framebuffer,
         .renderArea = renderArea,
         .clearValueCount = 1,
         .pClearValues = &clearValue,
     };
 
-    Pipeline pipeline = Owner().pipeline;
-    vkCmdBeginRenderPass(commandBuffer, &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+//    Pipeline pipeline = Owner().pipeline;
+    vkCmdBeginRenderPass(frame.commandBuffer, &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
+//    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
     VkViewport viewport {
         .x = 0.0f,
@@ -344,29 +415,27 @@ void Backbuffer::Draw()
         .maxDepth = 1.0f,
     };
 
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(frame.commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor {
         .offset = {0, 0},
         .extent = extent,
     };
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    vkCmdSetScissor(frame.commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdDraw(frame.commandBuffer, 3, 1, 0, 0);
+    vkCmdEndRenderPass(frame.commandBuffer);
 
-    status = vkEndCommandBuffer(commandBuffer);
+    status = vkEndCommandBuffer(frame.commandBuffer);
     if (status != VK_SUCCESS)
-    {
         throw std::runtime_error("Failed draw cmd");
-    }
 
     VkSemaphore imageSemaphore[] = {
-        imageSemaphores[currentImage],
+        frame.imageSemaphore,
     };
 
     VkSemaphore renderSemaphore[] = {
-        renderSemaphores[currentImage],
+        frame.renderSemaphore,
     };
 
     VkPipelineStageFlags waitStage[] = {
@@ -380,12 +449,12 @@ void Backbuffer::Draw()
         .pWaitSemaphores = imageSemaphore,
         .pWaitDstStageMask = waitStage,
         .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffer,
+        .pCommandBuffers = &frame.commandBuffer,
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = renderSemaphore,
     };
 
-    status = vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, fence);
+    status = vkQueueSubmit(scope.getDevice().getQueues().graphics.queue, 1, &submitInfo, frame.renderFence);
     if (status != VK_SUCCESS)
     {
         throw std::runtime_error("Failed queue submit");
@@ -397,69 +466,36 @@ void Backbuffer::Draw()
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = renderSemaphore,
         .swapchainCount = 1,
-        .pSwapchains = &handle,
+        .pSwapchains = &swapchain,
         .pImageIndices = &imageIndex,
         .pResults = nullptr,
     };
 
-    status = vkQueuePresentKHR(device.GetPresentQueue(), &presentInfo);
+    status = vkQueuePresentKHR(scope.getDevice().getQueues().present.queue, &presentInfo);
     if (status != VK_SUCCESS)
-    {
         throw std::runtime_error("Failed queue present");
-    }
 
     currentImage = ++currentImage % imageCount;
 }
 
-uint32_t Backbuffer::GetIndex()
+void Backbuffer::createSemaphores()
 {
-    return currentImage;
-}
-
-VkRenderPass Backbuffer::GetRenderPass()
-{
-    return *renderPass;
-}
-
-uint32_t Backbuffer::GetImageCount()
-{
-    return imageCount;
-}
-
-void Backbuffer::CreateSemaphores()
-{
-    renderSemaphores.resize(imageCount);
-    imageSemaphores.resize(imageCount);
-
     VkSemaphoreCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
     };
 
-    VkResult status = VK_SUCCESS;
-    VkDevice device = Owner().device;
-    for (uint32_t i = 0; i < imageCount; i++)
+    VkResult status;
+    VkDevice device = scope.getDevice().getVkDevice();
+    for (auto &frame : frames)
     {
-        status = vkCreateSemaphore(device, &ci, nullptr, &renderSemaphores[i]);
+        status = vkCreateSemaphore(device, &ci, nullptr, &frame.renderSemaphore);
         if (status != VK_SUCCESS)
-        {
             throw std::runtime_error("Failed semaphore creation (wait)");
-        }
-        status = vkCreateSemaphore(device, &ci, nullptr, &imageSemaphores[i]);
+
+        status = vkCreateSemaphore(device, &ci, nullptr, &frame.imageSemaphore);
         if (status != VK_SUCCESS)
-        {
             throw std::runtime_error("Failed semaphore creation (available)");
-        }
     }
-}
-
-VkImageView Backbuffer::GetView(uint32_t i)
-{
-    return imageViews[i];
-}
-
-VkExtent2D Backbuffer::GetExtent()
-{
-    return extent;
 }
