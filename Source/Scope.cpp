@@ -12,3 +12,16 @@ Scope::Scope()
 {}
 
 Scope::~Scope() {}
+
+void Scope::pollEvents()
+{
+    Window::PollEvents();
+}
+
+bool Scope::isActive() {
+    return window.IsValid();
+}
+
+void Scope::draw() {
+    backbuffer.draw();
+}

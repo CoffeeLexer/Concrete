@@ -15,6 +15,10 @@ public:
     Scope();
     ~Scope();
 
+    bool isActive();
+    void pollEvents();
+    void draw();
+
     Instance& getInstance() { return instance; }
     Window& getWindow() { return window; }
     Device& getDevice() { return device; }

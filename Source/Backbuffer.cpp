@@ -115,8 +115,6 @@ void Backbuffer::createImages()
     }
 }
 
-
-
 struct SurfaceCaps : VkSurfaceCapabilitiesKHR {
     SurfaceCaps(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, this);
