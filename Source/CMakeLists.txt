@@ -42,6 +42,7 @@ set(SOURCES
     Panic.cpp
     Scope.cpp
     LogicalDevice.cpp
+    Shader.cpp
 )
 
 add_executable(${APP_NAME}

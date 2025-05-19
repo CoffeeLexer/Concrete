@@ -110,7 +110,7 @@ void Device::createLogicalDevice()
             .pNext = nullptr,
             .flags = 0,
             .queueFamilyIndex = queues.graphics.index,
-            .queueCount = 2,
+            .queueCount = 1,
             .pQueuePriorities = priorities,
         };
         queueCreateInfos.push_back(queueCreateInfo);

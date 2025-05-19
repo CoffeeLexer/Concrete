@@ -55,5 +55,6 @@ public:
     ~Backbuffer();
     Backbuffer(const Backbuffer&) = delete;
     Backbuffer& operator=(const Backbuffer&) = delete;
+    const VkRenderPass getVkRenderPass() const { return renderPass; }
     void draw();
 };
