@@ -43,6 +43,8 @@ set(SOURCES
     Scope.cpp
     LogicalDevice.cpp
     Shader.cpp
+        ShaderManager.cpp
+        ShaderManager.h
 )
 
 add_executable(${APP_NAME}
