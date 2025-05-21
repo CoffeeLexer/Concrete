@@ -3,11 +3,13 @@
 #include "Instance.h"
 #include "Window.h"
 #include "Device.h"
+#include "Shader.h"
 
 Scope::Scope()
     : instance(*this)
     , window(*this)
     , device(*this)
+    , shaderManager(*this)
     , backbuffer(*this)
 {}
 
@@ -22,6 +24,14 @@ bool Scope::isActive() {
     return window.IsValid();
 }
 
-void Scope::draw() {
-    backbuffer.draw();
+void Scope::beginFrame() {
+    backbuffer.beginFrame();
+}
+
+void Scope::draw(Shader &shader) {
+    backbuffer.draw(shader);
+}
+
+void Scope::endFrame() {
+    backbuffer.endFrame();
 }

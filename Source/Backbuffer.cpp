@@ -8,6 +8,7 @@
 
 #include "Scope.h"
 #include "GLFW/glfw3.h"
+#include "Shader.h"
 
 Backbuffer::Backbuffer(Scope &scope) : scope(scope)
 {
@@ -391,15 +392,11 @@ void Backbuffer::allocateCommandPool()
     }
 }
 
-void Backbuffer::draw()
+void Backbuffer::beginFrame()
 {
     // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    Frame frame = frames[currentImage];
-
-
-//    VkFramebuffer &framebuffer = framebuffers[currentImage];
-//    VkFence &fence = renderFences[currentImage];
     VkDevice device = scope.getDevice().getVkDevice();
+    Frame &frame = frames[currentFrame];
     vkWaitForFences(device, 1, &frame.renderFence, VK_TRUE, UINT64_MAX);
     // vkDeviceWaitIdle(device);
 
@@ -412,9 +409,8 @@ void Backbuffer::draw()
         .pInheritanceInfo = nullptr,
     };
 
-    uint32_t imageIndex;
-    VkResult status = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
-        frame.imageSemaphore, nullptr, &imageIndex);
+    vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+        frame.imageSemaphore, nullptr, &frame.imageIndex);
 
     vkResetFences(device, 1, &frame.renderFence);
 
@@ -459,12 +455,21 @@ void Backbuffer::draw()
         .extent = extent,
     };
     vkCmdSetScissor(frame.commandBuffer, 0, 1, &scissor);
+}
 
+void Backbuffer::draw(Shader &shader)
+{
+    Frame &frame = frames[currentFrame];
+    vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.getVkPipeline());
     vkCmdDraw(frame.commandBuffer, 3, 1, 0, 0);
+}
+
+void Backbuffer::endFrame()
+{
+    Frame &frame = frames[currentFrame];
     vkCmdEndRenderPass(frame.commandBuffer);
 
-    status = vkEndCommandBuffer(frame.commandBuffer);
-    if (status != VK_SUCCESS)
+    if (vkEndCommandBuffer(frame.commandBuffer) != VK_SUCCESS)
         throw std::runtime_error("Failed draw cmd");
 
     VkSemaphore imageSemaphore[] = {
@@ -491,11 +496,8 @@ void Backbuffer::draw()
         .pSignalSemaphores = renderSemaphore,
     };
 
-    status = vkQueueSubmit(scope.getDevice().getQueues().graphics.queue, 1, &submitInfo, frame.renderFence);
-    if (status != VK_SUCCESS)
-    {
+    if (vkQueueSubmit(scope.getDevice().getQueues().graphics.queue, 1, &submitInfo, frame.renderFence) != VK_SUCCESS)
         throw std::runtime_error("Failed queue submit");
-    }
 
     VkPresentInfoKHR presentInfo = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -504,15 +506,14 @@ void Backbuffer::draw()
         .pWaitSemaphores = renderSemaphore,
         .swapchainCount = 1,
         .pSwapchains = &swapchain,
-        .pImageIndices = &imageIndex,
+        .pImageIndices = &frame.imageIndex,
         .pResults = nullptr,
     };
 
-    status = vkQueuePresentKHR(scope.getDevice().getQueues().present.queue, &presentInfo);
-    if (status != VK_SUCCESS)
+    if (vkQueuePresentKHR(scope.getDevice().getQueues().present.queue, &presentInfo) != VK_SUCCESS)
         throw std::runtime_error("Failed queue present");
 
-    currentImage = ++currentImage % imageCount;
+    currentFrame = ++currentFrame % imageCount;
 }
 
 void Backbuffer::destroySemaphores()

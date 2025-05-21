@@ -3,7 +3,11 @@
 #include "vulkan/vulkan.h"
 #include <vector>
 
+class Scope;
+class Shader;
+
 struct Frame {
+    uint32_t imageIndex             = 0;
     VkImageView imageView           = VK_NULL_HANDLE;
     VkImage image                   = VK_NULL_HANDLE;
     VkFramebuffer framebuffer       = VK_NULL_HANDLE;
@@ -11,9 +15,10 @@ struct Frame {
     VkSemaphore imageSemaphore      = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer   = VK_NULL_HANDLE;
     VkFence renderFence             = VK_NULL_HANDLE;
+    Frame(const Frame&) = delete;
+    Frame& operator=(const Frame&) = delete;
 };
 
-class Scope;
 class Backbuffer
 {
     Scope &scope;
@@ -27,7 +32,7 @@ class Backbuffer
     VkSurfaceFormatKHR surfaceFormat;
     VkExtent2D extent = {};
     uint32_t imageCount = 3;
-    uint32_t currentImage = 0;
+    uint32_t currentFrame = 0;
 
     void selectPresentMode();
     void selectSurfaceFormat();
@@ -56,5 +61,8 @@ public:
     Backbuffer(const Backbuffer&) = delete;
     Backbuffer& operator=(const Backbuffer&) = delete;
     const VkRenderPass getVkRenderPass() const { return renderPass; }
-    void draw();
+
+    void beginFrame();
+    void draw(Shader &shader);
+    void endFrame();
 };
