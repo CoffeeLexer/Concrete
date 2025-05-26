@@ -4,6 +4,8 @@
 #include "Shader.h"
 #include "ShaderManager.h"
 
+#include <tiny_gltf.h>
+
 int main()
 {
     Scope s{};

@@ -12,7 +12,12 @@ FetchContent_Declare(glfw
     GIT_TAG         e7ea71be039836da3a98cea55ae5569cb5eb885c
 )
 
-FetchContent_MakeAvailable(imgui glfw)
+FetchContent_Declare(tinygltf
+    GIT_REPOSITORY  https://github.com/syoyo/tinygltf.git
+    GIT_TAG         37250b3470b517fd6823ee82d6e0495695bb7924
+)
+
+FetchContent_MakeAvailable(imgui glfw tinygltf)
 find_package(Vulkan REQUIRED)
 
 file(GLOB IMGUI_SOURCE
@@ -56,6 +61,7 @@ target_link_libraries(${APP_NAME}
     PUBLIC glfw
     PUBLIC imgui
     PUBLIC Vulkan::Vulkan
+    PUBLIC tinygltf
 )
 
 configure_file(Config.h.in Config.h)
