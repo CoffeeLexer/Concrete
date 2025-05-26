@@ -15,6 +15,7 @@ struct Frame {
     VkSemaphore imageSemaphore      = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer   = VK_NULL_HANDLE;
     VkFence renderFence             = VK_NULL_HANDLE;
+    Frame() = default;
     Frame(const Frame&) = delete;
     Frame& operator=(const Frame&) = delete;
 };

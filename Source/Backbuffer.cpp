@@ -16,7 +16,7 @@ Backbuffer::Backbuffer(Scope &scope) : scope(scope)
 
     createSwapchain();
 
-    frames.resize(imageCount);
+    frames = std::vector<Frame>(imageCount);
 
     createImages();
     createImageViews();
