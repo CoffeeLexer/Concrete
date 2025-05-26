@@ -35,3 +35,7 @@ void Scope::draw(Shader &shader) {
 void Scope::endFrame() {
     backbuffer.endFrame();
 }
+
+void Scope::waitIdle() {
+    backbuffer.waitIdle();
+}

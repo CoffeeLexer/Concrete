@@ -18,6 +18,7 @@ int main()
         s.draw(error);
         s.endFrame();
     }
+    s.waitIdle();
 
     return 0;
 }

@@ -516,6 +516,11 @@ void Backbuffer::endFrame()
     currentFrame = ++currentFrame % imageCount;
 }
 
+void Backbuffer::waitIdle() {
+    const VkDevice device = scope.getDevice().getVkDevice();
+    vkDeviceWaitIdle(device);
+}
+
 void Backbuffer::destroySemaphores()
 {
     const auto device = scope.getDevice().getVkDevice();

@@ -66,4 +66,5 @@ public:
     void beginFrame();
     void draw(Shader &shader);
     void endFrame();
+    void waitIdle();
 };

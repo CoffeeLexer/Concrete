@@ -23,6 +23,7 @@ public:
     void beginFrame();
     void draw(Shader &shader);
     void endFrame();
+    void waitIdle();
 
     Instance& getInstance() { return instance; }
     Window& getWindow() { return window; }
