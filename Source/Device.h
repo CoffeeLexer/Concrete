@@ -4,14 +4,15 @@
 
 #include "vulkan/vulkan.h"
 #include <vector>
+#include "Traits.h"
 
-struct Queue
+struct Queue : DisableCopy
 {
     VkQueue queue = VK_NULL_HANDLE;
     uint32_t index = 0;
 };
 
-struct Queues
+struct Queues : DisableCopy
 {
     Queue graphics = {};
     Queue present = {};
@@ -21,7 +22,7 @@ struct Queues
 };
 
 class Scope;
-class Device
+class Device : DisableCopy
 {
     Scope &scope;
 
@@ -35,10 +36,8 @@ class Device
 public:
     explicit Device(Scope &scope);
     ~Device();
-    Device(const Device&) = delete;
-    Device& operator=(const Device&) = delete;
 
-    const Queues& getQueues() { return queues; }
-    const VkPhysicalDevice& getVkPhysicalDevice() { return physicalDevice; }
-    const VkDevice& getVkDevice() { return logicalDevice; }
+    const Queues& getQueues() const { return queues; }
+    const VkPhysicalDevice& getVkPhysicalDevice() const { return physicalDevice; }
+    const VkDevice& getVkDevice() const { return logicalDevice; }
 };

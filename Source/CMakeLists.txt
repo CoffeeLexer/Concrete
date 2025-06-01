@@ -50,6 +50,11 @@ set(SOURCES
     Shader.cpp
         ShaderManager.cpp
         ShaderManager.h
+        Texture.cpp
+        Texture.h
+        TextureManager.cpp
+        TextureManager.h
+        Traits.h
 )
 
 add_executable(${APP_NAME}
