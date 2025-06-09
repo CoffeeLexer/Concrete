@@ -9,7 +9,6 @@ class Texture;
 struct Buffer {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
-
 };
 
 struct BufferCreateInfo {
@@ -17,10 +16,24 @@ struct BufferCreateInfo {
     VkMemoryPropertyFlags properties;
 };
 
+struct Image {
+    VkImage image;
+};
+
+struct ImageCreateInfo {
+    uint32_t width;
+    uint32_t height;
+    VkFormat format;
+    VkImageTiling tiling;
+    VkImageUsageFlags usage;
+    VkMemoryPropertyFlags properties;
+};
+
 class TextureManager : DisableCopy {
     Scope& scope;
 
-    void createBuffer(VkDeviceSize size, const BufferCreateInfo ci)
+    Buffer createBuffer(VkDeviceSize size, const BufferCreateInfo ci);
+    Image createImage(ImageCreateInfo ci);
 
 public:
     TextureManager(Scope &scope) : scope(scope) {}
