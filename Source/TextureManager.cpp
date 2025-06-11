@@ -89,6 +89,41 @@ Texture TextureManager::createTexture(const char *filename)
                 textureImageMemory);
 }
 
+VkDeviceMemory TextureManager::allocateMemory(VkMemoryRequirements requirements, VkMemoryPropertyFlags properties)
+{
+    const VkPhysicalDevice &physicalDevice = scope.getDevice().getVkPhysicalDevice();
+    const VkDevice &device = scope.getDevice().getVkDevice();
+
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+
+    uint32_t filter = requirements.memoryTypeBits;
+
+    std::optional<uint32_t> memoryIndex = 0;
+    for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+    {
+        if ((filter & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            memoryIndex = i;
+            break;
+        }
+    }
+    if (!memoryIndex.has_value())
+        throw std::runtime_error("Failed to find requested memory");
+
+    VkMemoryAllocateInfo ai = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .allocationSize = requirements.size,
+        .memoryTypeIndex = memoryIndex.value(),
+    };
+
+    VkDeviceMemory memory;
+    if(vkAllocateMemory(device, &ai, nullptr, &memory) != VK_SUCCESS)
+        throw std::runtime_error("Failed allocating device memory");
+
+    return memory;
+}
+
 Image TextureManager::createImage(ImageCreateInfo imageCI)
 {
     VkImageCreateInfo ci {
@@ -123,9 +158,9 @@ Image TextureManager::createImage(ImageCreateInfo imageCI)
     vkGetImageMemoryRequirements(device, image.image, &requirements);
 
     VkMemoryAllocateInfo ai = {
-        .sType = ,
-        .pNext = ,
-        .allocationSize = ,
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .allocationSize = requirements.size,
         .memoryTypeIndex = ,
     };
 }
