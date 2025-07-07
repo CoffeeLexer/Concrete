@@ -31,29 +31,7 @@ Buffer TextureManager::createBuffer(VkDeviceSize size, const BufferCreateInfo bu
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
 
-    uint32_t filter = requirements.memoryTypeBits;
-    VkMemoryPropertyFlags properties;
-
-    std::optional<uint32_t> memoryIndex = 0;
-    for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
-    {
-        if ((filter & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            memoryIndex = i;
-            break;
-        }
-    }
-    if (!memoryIndex.has_value())
-        throw std::runtime_error("Failed to find requested memory");
-
-    VkMemoryAllocateInfo ai {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .allocationSize = requirements.size,
-        .memoryTypeIndex = memoryIndex.value(),
-    };
-
-    if(vkAllocateMemory(device, &ai, nullptr, &buffer.memory) != VK_SUCCESS)
-        throw std::runtime_error("Failed allocate memory");
+    buffer.memory = allocateMemory(requirements, bufferCI.properties);
 
     if(vkBindBufferMemory(device, buffer.buffer, buffer.memory, 0) != VK_SUCCESS)
         throw std::runtime_error("Failed bind memory");
@@ -80,13 +58,54 @@ Texture TextureManager::createTexture(const char *filename)
     memcpy(data, pixels, (size_t)imageSize);
     vkUnmapMemory(device, staging.memory);
 
-    createImage(texWidth, texHeight,
-                VK_FORMAT_R8G8B8A8_SRGB,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                textureImage,
-                textureImageMemory);
+    ImageCreateInfo imageCI {
+        .width = texWidth,
+        .height = texHeight,
+        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+    };
+
+    createImage(imageCI);
+}
+
+void TextureManager::allocateCmdPool()
+{
+    auto queueFamily = scope.getDevice().getQueues().transfer.
+
+    VkCommandPoolCreateInfo pool_ci = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = 0,
+    };
+
+    VkDevice device = scope.getDevice().getVkDevice();
+    vkCreateCommandPool(device, &pool_ci, nullptr, &cmdPool);
+
+    VkCommandBufferAllocateInfo ai = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = cmdPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = cmdPoolCapacity,
+    };
+}
+
+void transition()
+{
+    VkCommandBufferAllocateInfo ai {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = ,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+
+    VkCommandBuffer cmd;
+
+    vkAllocateCommandBuffers()
 }
 
 VkDeviceMemory TextureManager::allocateMemory(VkMemoryRequirements requirements, VkMemoryPropertyFlags properties)
@@ -157,11 +176,15 @@ Image TextureManager::createImage(ImageCreateInfo imageCI)
     VkMemoryRequirements requirements;
     vkGetImageMemoryRequirements(device, image.image, &requirements);
 
-    VkMemoryAllocateInfo ai = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .allocationSize = requirements.size,
-        .memoryTypeIndex = ,
-    };
+    image.memory = allocateMemory(requirements, imageCI.properties);
+
+    if (vkBindImageMemory(device, image.image, image.memory, 0) != VK_SUCCESS)
+        throw std::runtime_error("Failed bind image memory");
+
+    return image;
 }
 
+TextureManager::TextureManager(Scope &scope) : scope(scope) {
+    const VkPhysicalDevice &physicalDevice = scope.getDevice().getVkPhysicalDevice();
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+}

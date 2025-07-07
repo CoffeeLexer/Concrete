@@ -16,8 +16,10 @@ struct Queues : DisableCopy
 {
     Queue graphics = {};
     Queue present = {};
+    Queue transfer = {};
     bool sameFamily() const {
-        return graphics.index == present.index;
+        return graphics.index == present.index &&
+            graphics.index == transfer.index;
     }
 };
 

@@ -39,11 +39,29 @@ namespace Support {
     };
 }
 
+class QueueFamilySelector
+{
+    uint32_t graphicsIndex;
+    uint32_t transferIndex;
+    uint32_t presentIndex;
+public:
+    QueueFamilySelector(Scope& scope)
+    {
+        const auto& phyDevice = scope.getDevice().getVkPhysicalDevice();
+        const auto& surf = scope.getWindow().getVkSurface();
+        uint32_t familyCount;
+        vkGetPhysicalDeviceQueueFamilyProperties(phyDevice, &familyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> properties{familyCount};
+        vkGetPhysicalDeviceQueueFamilyProperties(phyDevice, &familyCount, properties.data());
+
+        std::vector<VkBool32> presentSupport{familyCount};
+        for (uint32_t i = 0; i < familyCount; i++)
+            vkGetPhysicalDeviceSurfaceSupportKHR(phyDevice, i, surf, &presentSupport[i]);
+    }
+};
+
 Queues Device::selectQueueFamilies()
 {
-    auto presentSupport = PresentSupportList{physicalDevice, scope.getWindow().getVkSurface()};
-    auto queueFamilyProperties = QueueFamilyProperties{physicalDevice};
-
     std::vector<int> candidates(presentSupport.size(), Support::None);
 
     for (uint32_t i = 0; i < presentSupport.size(); i++)
@@ -62,20 +80,30 @@ Queues Device::selectQueueFamilies()
             candidates[i] |= Support::Transfer;
     }
 
-    Queues queuesCandidate{};
     // Let's prefer 1 queue over 2
     for (uint32_t i = 0; i < candidates.size(); i++)
     {
-        auto all = (Support::Enum)(Support::Present | Support::Graphics);
+        auto all = (Support::Enum)(Support::Present | Support::Graphics | Support::Transfer);
         auto candidate = candidates[i];
         if ((candidate & all) == all) {
-            queuesCandidate.graphics.index = i;
-            queuesCandidate.present.index = i;
-            return queuesCandidate;
+            return Queues {
+                .graphics = Queue {
+                    .queue = VK_NULL_HANDLE,
+                    .index = i,
+                },
+                .present = Queue {
+                    .queue = VK_NULL_HANDLE,
+                    .index = i,
+                },
+                .transfer = Queue {
+                    .queue = VK_NULL_HANDLE,
+                    .index = i,
+                },
+            };
         }
     }
 
-    std::optional<uint32_t> presentIndex, graphicsIndex;
+    std::optional<uint32_t> presentIndex, graphicsIndex, transferIndex;
     for (uint32_t i = 0; i < candidates.size(); i++)
     {
         const auto& candidate = candidates[i];
@@ -89,13 +117,29 @@ Queues Device::selectQueueFamilies()
         {
             graphicsIndex = i;
         }
+        if (!transferIndex.has_value() &&
+            (candidate & Support::Transfer) == Support::Transfer)
+        {
+            transferIndex = i;
+        }
     }
     if (!graphicsIndex.has_value() || !presentIndex.has_value())
         panic("Queue family support missing minimal requirement");
 
-    queuesCandidate.present.index = presentIndex.value();
-    queuesCandidate.graphics.index = graphicsIndex.value();
-    return queuesCandidate;
+    return Queues {
+        .graphics = Queue {
+            .queue = VK_NULL_HANDLE,
+            .index = graphicsIndex.value(),
+        },
+        .present = Queue {
+            .queue = VK_NULL_HANDLE,
+            .index = presentIndex.value(),
+        },
+        .transfer = Queue {
+            .queue = VK_NULL_HANDLE,
+            .index = transferIndex.value(),
+        },
+    };
 }
 
 void Device::createLogicalDevice()
@@ -122,6 +166,14 @@ void Device::createLogicalDevice()
             .pNext = nullptr,
             .flags = 0,
             .queueFamilyIndex = queues.graphics.index,
+            .queueCount = 1,
+            .pQueuePriorities = priorities,
+        };
+        VkDeviceQueueCreateInfo transferQueueInfo = {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .queueFamilyIndex = queues.transfer.index,
             .queueCount = 1,
             .pQueuePriorities = priorities,
         };

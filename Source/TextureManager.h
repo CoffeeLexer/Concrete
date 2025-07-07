@@ -9,6 +9,7 @@ class Texture;
 struct Buffer {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkMemoryRequirements requirements = {};
 };
 
 struct BufferCreateInfo {
@@ -18,6 +19,7 @@ struct BufferCreateInfo {
 
 struct Image {
     VkImage image;
+    VkDeviceMemory memory;
 };
 
 struct ImageCreateInfo {
@@ -32,10 +34,15 @@ struct ImageCreateInfo {
 class TextureManager : DisableCopy {
     Scope& scope;
 
+    VkPhysicalDeviceMemoryProperties memoryProperties = {};
+    const uint32_t cmdPoolCapacity = 4;
+    VkCommandPool cmdPool = VK_NULL_HANDLE;
+
+    [[nodiscard]] VkDeviceMemory allocateMemory(VkMemoryRequirements requirements, VkMemoryPropertyFlags properties);
     Buffer createBuffer(VkDeviceSize size, const BufferCreateInfo ci);
     Image createImage(ImageCreateInfo ci);
 
 public:
-    TextureManager(Scope &scope) : scope(scope) {}
+    TextureManager(Scope &scope);
     Texture createTexture(const char* filename);
 };

@@ -517,8 +517,12 @@ void Backbuffer::endFrame()
 }
 
 void Backbuffer::waitIdle() {
+    static bool reused = false;
+    if (reused)
+        throw std::runtime_error("WaitIdle reused - should be used only on shutdown!");
     const VkDevice device = scope.getDevice().getVkDevice();
     vkDeviceWaitIdle(device);
+    reused = true;
 }
 
 void Backbuffer::destroySemaphores()
