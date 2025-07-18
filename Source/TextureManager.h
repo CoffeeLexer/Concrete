@@ -38,6 +38,8 @@ class TextureManager : DisableCopy {
     const uint32_t cmdPoolCapacity = 4;
     VkCommandPool cmdPool = VK_NULL_HANDLE;
 
+    transition();
+
     [[nodiscard]] VkDeviceMemory allocateMemory(VkMemoryRequirements requirements, VkMemoryPropertyFlags properties);
     Buffer createBuffer(VkDeviceSize size, const BufferCreateInfo ci);
     Image createImage(ImageCreateInfo ci);
