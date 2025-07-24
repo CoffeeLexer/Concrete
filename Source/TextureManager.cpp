@@ -1,5 +1,6 @@
 #include "TextureManager.h"
 #include <stdexcept>
+#include "stb_image.h"
 
 #include "Scope.h"
 #include "Texture.h"
@@ -46,8 +47,12 @@ const BufferCreateInfo CPU_TO_GPU = {
 
 Texture TextureManager::createTexture(const char *filename)
 {
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+
     Texture texture;
-    VkDeviceSize imageSize = width * height * channels;
+    VkDeviceSize imageSize = texWidth * texHeight * texChannels;
     Buffer staging = createBuffer(imageSize, CPU_TO_GPU);
 
     const VkDevice device = scope.getDevice().getVkDevice();
@@ -59,15 +64,83 @@ Texture TextureManager::createTexture(const char *filename)
     vkUnmapMemory(device, staging.memory);
 
     ImageCreateInfo imageCI {
-        .width = texWidth,
-        .height = texHeight,
+        .width = static_cast<uint32_t>(texWidth),
+        .height = static_cast<uint32_t>(texHeight),
         .format = VK_FORMAT_R8G8B8A8_SRGB,
         .tiling = VK_IMAGE_TILING_OPTIMAL,
         .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         .properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
     };
 
-    createImage(imageCI);
+    Image image = createImage(imageCI);
+
+    transition(image.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    bufferToImage(staging.buffer, image.image, texWidth, texHeight);
+    transition(image.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(device, staging.buffer, nullptr);
+    vkFreeMemory(device, staging.memory, nullptr);
+    return texture;
+}
+
+void TextureManager::bufferToImage(VkBuffer buf, VkImage img, uint32_t width, uint32_t height)
+{
+    VkCommandBufferAllocateInfo ai {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = cmdPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+
+    auto device = scope.getDevice().getVkDevice();
+
+    VkCommandBuffer cmd;
+    vkAllocateCommandBuffers(device, &ai, &cmd);
+
+    VkCommandBufferBeginInfo beginInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = nullptr,
+    };
+
+    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    VkBufferImageCopy region = {
+         .bufferOffset = 0,
+         .bufferRowLength = 0,
+         .bufferImageHeight = 0,
+         .imageSubresource = VkImageSubresourceLayers {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+             },
+         .imageOffset = {0, 0, 0},
+         .imageExtent = {width, height, 1},
+    };
+
+    vkCmdCopyBufferToImage(cmd, buf, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submitInfo {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = nullptr,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &cmd,
+        .signalSemaphoreCount = 0,
+        .pSignalSemaphores = nullptr,
+    };
+
+    auto gfxQueue = scope.getDevice().getQueues().graphics.queue;
+    vkQueueSubmit(gfxQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(gfxQueue);
+
+    vkFreeCommandBuffers(device, cmdPool, 1, &cmd);
 }
 
 void TextureManager::allocateCmdPool()
@@ -83,17 +156,9 @@ void TextureManager::allocateCmdPool()
 
     VkDevice device = scope.getDevice().getVkDevice();
     vkCreateCommandPool(device, &pool_ci, nullptr, &cmdPool);
-
-//    VkCommandBufferAllocateInfo ai = {
-//        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-//        .pNext = nullptr,
-//        .commandPool = cmdPool,
-//        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-//        .commandBufferCount = cmdPoolCapacity,
-//    };
 }
 
-void TextureManager::transition()
+void TextureManager::transition(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBufferAllocateInfo ai {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
